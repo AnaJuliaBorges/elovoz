@@ -4,7 +4,7 @@ Plataforma que conecta doadores a instituições sociais: as ONGs divulgam o que
 estão precisando agora, e quem quer doar encontra a necessidade que consegue
 atender. SPA em React + Vite com backend no Supabase.
 
-Baseado na proposta de Atividade Extensionista II (UNINTER — Engenharia de
+Baseado na proposta de Atividade Extensionista (UNINTER — Engenharia de
 Software). A especificação completa está em [docs/especificacao-tecnica.md](docs/especificacao-tecnica.md).
 
 ## Setup
