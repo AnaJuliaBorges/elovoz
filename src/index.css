@@ -1,0 +1,81 @@
+@import url("https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "Work Sans", sans-serif;
+
+  /* Laranja Elo — CTAs ("Tenho interesse", "Seguir ONG") */
+  --color-primary: #f2723e;
+  --color-primary-foreground: #ffffff;
+
+  /* Azul-petróleo — cabeçalho, navegação, institucional */
+  --color-secondary: #16535a;
+  --color-secondary-foreground: #ffffff;
+
+  --color-background: #fafaf7;
+  --color-foreground: #1f2933;
+  --color-surface: #ffffff;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #1f2933;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1f2933;
+
+  --color-muted: #f2f0eb;
+  --color-muted-foreground: #6b7684;
+
+  --color-accent: #f2f0eb;
+  --color-accent-foreground: #16535a;
+
+  /* Terracota — urgência alta e ações críticas */
+  --color-destructive: #e4572e;
+  --color-destructive-foreground: #fafaf7;
+  --color-destructive-light: #fbe3da;
+
+  --color-border: #e5e1da;
+  --color-input: #e5e1da;
+  --color-ring: #f2723e;
+
+  /* Verde — urgência baixa, confirmações, status "atendida" */
+  --color-success: #4caf50;
+  --color-success-light: #e2f5e3;
+
+  /* Amarelo — urgência média */
+  --color-warning: #f4b942;
+  --color-warning-light: #fdf1d7;
+
+  --color-info: #16535a;
+  --color-info-light: #d9eaec;
+
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-size: var(--text-base);
+  }
+}
+
+/* mobile-first: a escala tipográfica cresce só a partir do tablet */
+@media (min-width: 48rem) {
+  :root {
+    --text-xs: calc(0.75rem * 1.25);
+    --text-sm: calc(0.875rem * 1.25);
+    --text-base: calc(1rem * 1.25);
+    --text-lg: calc(1.125rem * 1.25);
+    --text-xl: calc(1.25rem * 1.25);
+    --text-2xl: calc(1.5rem * 1.25);
+    --text-3xl: calc(1.875rem * 1.25);
+    --text-4xl: calc(2.25rem * 1.25);
+  }
+}

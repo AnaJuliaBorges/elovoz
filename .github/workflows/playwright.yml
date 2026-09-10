@@ -1,0 +1,35 @@
+name: Playwright Tests
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install dependencies
+        run: npm install
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          # o webServer do Playwright sobe o app de verdade (npm run dev);
+          # sem essas vars, src/lib/supabase.ts lança "supabaseKey is
+          # required" já no boot e nenhuma página chega a renderizar.
+          # Valores fake bastam: todo tráfego de rede real é interceptado
+          # via page.route nos specs.
+          VITE_SUPABASE_URL: "https://test-project.supabase.co"
+          VITE_SUPABASE_PUBLISHABLE_KEY: "test-supabase-anon-key"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

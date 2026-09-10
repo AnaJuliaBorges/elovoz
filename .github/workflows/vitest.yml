@@ -1,0 +1,37 @@
+name: Vitest Unit Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Vitest tests
+        # as env vars fake do Supabase vêm de vite.config.ts (test.env),
+        # então este job não depende de nenhum secret do repositório
+        run: npm run test:coverage
+
+      - name: Upload coverage results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-coverage-report
+          path: coverage/
+          retention-days: 7

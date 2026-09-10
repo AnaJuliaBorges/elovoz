@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elovoz</title>
+    <meta
+      name="description"
+      content="Elovoz conecta doadores e instituições sociais: veja o que cada ONG precisa agora e ofereça sua doação."
+    />
+    <meta name="theme-color" content="#F2723E" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Um erro fatal durante o boot (env var faltando, por exemplo) acontece
+      // antes de o React montar e deixaria a página em branco, sem pista
+      // nenhuma. Este handler pinta o erro na tela.
+      window.addEventListener("error", function (event) {
+        var root = document.getElementById("root");
+        if (!root || root.childElementCount > 0) return;
+
+        root.innerHTML =
+          '<div style="font-family:system-ui,sans-serif;max-width:34rem;margin:12vh auto;padding:0 1.5rem;color:#1F2933">' +
+          '<h1 style="font-size:1.125rem;margin:0 0 .75rem">Não foi possível iniciar o Elovoz</h1>' +
+          '<p style="margin:0 0 1rem;line-height:1.5"></p>' +
+          '<p style="margin:0;font-size:.875rem;color:#6B7684">Detalhes completos no console do navegador (F12).</p>' +
+          "</div>";
+        root.querySelector("p").textContent =
+          (event.error && event.error.message) || event.message || "Erro desconhecido.";
+      });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
