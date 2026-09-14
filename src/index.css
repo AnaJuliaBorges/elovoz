@@ -66,16 +66,29 @@
   }
 }
 
-/* mobile-first: a escala tipográfica cresce só a partir do tablet */
+/* mobile-first: todos os tamanhos de texto saem de um multiplicador só, que
+   cresce no tablet e de novo no desktop. Para ajustar, mude o --text-scale */
+:root {
+  --text-scale: 1;
+
+  --text-xs: calc(0.75rem * var(--text-scale));
+  --text-sm: calc(0.875rem * var(--text-scale));
+  --text-base: calc(1rem * var(--text-scale));
+  --text-lg: calc(1.125rem * var(--text-scale));
+  --text-xl: calc(1.25rem * var(--text-scale));
+  --text-2xl: calc(1.5rem * var(--text-scale));
+  --text-3xl: calc(1.875rem * var(--text-scale));
+  --text-4xl: calc(2.25rem * var(--text-scale));
+}
+
 @media (min-width: 48rem) {
   :root {
-    --text-xs: calc(0.75rem * 1.25);
-    --text-sm: calc(0.875rem * 1.25);
-    --text-base: calc(1rem * 1.25);
-    --text-lg: calc(1.125rem * 1.25);
-    --text-xl: calc(1.25rem * 1.25);
-    --text-2xl: calc(1.5rem * 1.25);
-    --text-3xl: calc(1.875rem * 1.25);
-    --text-4xl: calc(2.25rem * 1.25);
+    --text-scale: 1.25;
+  }
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --text-scale: 1.375;
   }
 }
