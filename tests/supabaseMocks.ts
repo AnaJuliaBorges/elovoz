@@ -3,6 +3,7 @@ import type { Page, Route } from "@playwright/test";
 export const EMAIL = "e2e@elovoz.test";
 export const PASSWORD = "senha-e2e-123";
 export const USER_ID = "e2e-user";
+export const ONG_ID = "ong-e2e";
 
 const corsHeaders = {
   "access-control-allow-origin": "*",
@@ -80,9 +81,26 @@ async function respondRows(route: Route, rows: unknown[]) {
   await route.fulfill(jsonResponse(rows));
 }
 
+export async function login(page: Page) {
+  await page.getByRole("textbox", { name: "E-mail" }).fill(EMAIL);
+  await page.getByLabel("Senha", { exact: true }).fill(PASSWORD);
+  await page.getByRole("button", { name: "Entrar" }).click();
+}
+
+/** Radix Select: abre pelo trigger e escolhe a opção pelo nome exato */
+export async function chooseOption(page: Page, trigger: string, option: string) {
+  await page.getByRole("combobox", { name: trigger }).click();
+  await page.getByRole("option", { name: option, exact: true }).click();
+}
+
 export const STATES = [{ id: "uuid-rj", name: "Rio de Janeiro", uf: "RJ" }];
 export const CITIES = [
   { id: "uuid-rio", name: "Rio de Janeiro", state_id: "uuid-rj" },
+];
+
+export const CATEGORIES = [
+  { id: "cat-alimentos", name: "Alimentos", icon: null },
+  { id: "cat-roupas", name: "Roupas e Calçados", icon: null },
 ];
 
 export type ProfileRow = {
@@ -93,11 +111,83 @@ export type ProfileRow = {
   created_at: string;
 };
 
+export type OngRow = {
+  id: string;
+  trade_name: string;
+  verification_status: "pending" | "approved" | "rejected";
+};
+
+export type NeedRow = {
+  id: string;
+  ong_id: string;
+  category_id: string;
+  title: string;
+  description: string | null;
+  quantity: number | null;
+  urgency: "low" | "medium" | "high";
+  deadline: string | null;
+  status: "open" | "partially_fulfilled" | "fulfilled";
+  created_at: string;
+  updated_at: string;
+  category: { id: string; name: string } | null;
+  ong: {
+    id: string;
+    trade_name: string;
+    neighborhood: string;
+    city: { name: string } | null;
+    state: { uf: string } | null;
+  };
+};
+
+/** Linha de `needs` já com os embeds que a busca e o detalhe pedem. */
+export function needRow(overrides: Partial<NeedRow> = {}): NeedRow {
+  return {
+    id: "need-1",
+    ong_id: ONG_ID,
+    category_id: "cat-alimentos",
+    title: "Cestas básicas",
+    description: "Para 30 famílias do bairro",
+    quantity: 30,
+    urgency: "high",
+    deadline: null,
+    status: "open",
+    created_at: nowIso,
+    updated_at: nowIso,
+    category: { id: "cat-alimentos", name: "Alimentos" },
+    ong: {
+      id: ONG_ID,
+      trade_name: "Casa Solidária",
+      neighborhood: "Centro",
+      city: { name: "Rio de Janeiro" },
+      state: { uf: "RJ" },
+    },
+    ...overrides,
+  };
+}
+
+// filtros `coluna=eq.valor` que o mock entende; os outros (status, prazo,
+// embeds) passam direto
+const NEED_EQ_FILTERS = ["id", "ong_id", "category_id", "urgency"] as const;
+
+function filterNeeds(rows: NeedRow[], url: URL): NeedRow[] {
+  return rows.filter((row) =>
+    NEED_EQ_FILTERS.every((column) => {
+      const filter = url.searchParams.get(column);
+
+      return !filter?.startsWith("eq.") || String(row[column]) === filter.slice(3);
+    }),
+  );
+}
+
 export type MockOptions = {
   /** login com credenciais erradas */
   loginFails?: boolean;
   /** perfil que já existe no banco antes do teste */
   profile?: ProfileRow | null;
+  /** ONG do usuário logado que já existe no banco */
+  ong?: OngRow | null;
+  /** necessidades que já existem no banco */
+  needs?: NeedRow[];
 };
 
 /** o que o banco fake gravou durante o teste */
@@ -105,13 +195,25 @@ export type MockState = {
   profile: ProfileRow | null;
   ongs: Record<string, unknown>[];
   contacts: Record<string, unknown>[];
+  needs: NeedRow[];
+  /** corpos dos INSERTs em `needs`, como o app mandou */
+  insertedNeeds: Record<string, unknown>[];
+  /** URLs dos GETs em `needs`, para conferir os filtros */
+  needRequests: string[];
 };
 
 export async function setupSupabaseMocks(
   page: Page,
-  { loginFails = false, profile = null }: MockOptions = {},
+  { loginFails = false, profile = null, ong = null, needs = [] }: MockOptions = {},
 ): Promise<MockState> {
-  const state: MockState = { profile, ongs: [], contacts: [] };
+  const state: MockState = {
+    profile,
+    ongs: [],
+    contacts: [],
+    needs: [...needs],
+    insertedNeeds: [],
+    needRequests: [],
+  };
 
   await page.route("**/auth/v1/token*", async (route) => {
     if (route.request().method() === "OPTIONS") return preflight(route);
@@ -165,6 +267,11 @@ export async function setupSupabaseMocks(
     await respondRows(route, CITIES);
   });
 
+  await page.route("**/rest/v1/categories*", async (route) => {
+    if (route.request().method() === "OPTIONS") return preflight(route);
+    await respondRows(route, CATEGORIES);
+  });
+
   await page.route("**/rest/v1/profiles*", async (route) => {
     const request = route.request();
     if (request.method() === "OPTIONS") return preflight(route);
@@ -186,11 +293,16 @@ export async function setupSupabaseMocks(
     if (request.method() === "POST") {
       const body = request.postDataJSON() as Record<string, unknown>;
       state.ongs.push(body);
-      await respondRows(route, [{ id: "ong-e2e" }]);
+      await respondRows(route, [{ id: ONG_ID }]);
       return;
     }
 
-    await respondRows(route, state.ongs.length ? [{ id: "ong-e2e" }] : []);
+    if (state.ongs.length) {
+      await respondRows(route, [{ id: ONG_ID }]);
+      return;
+    }
+
+    await respondRows(route, ong ? [ong] : []);
   });
 
   await page.route("**/rest/v1/ong_contacts*", async (route) => {
@@ -212,6 +324,64 @@ export async function setupSupabaseMocks(
         "content-range": `*/${state.contacts.length}`,
       },
       body: "",
+    });
+  });
+
+  await page.route("**/rest/v1/needs*", async (route) => {
+    const request = route.request();
+    const method = request.method();
+    if (method === "OPTIONS") return preflight(route);
+
+    const url = new URL(request.url());
+
+    if (method === "POST") {
+      const body = request.postDataJSON() as Partial<NeedRow>;
+      const category = CATEGORIES.find((item) => item.id === body.category_id);
+      const row = needRow({
+        ...body,
+        id: `need-novo-${state.insertedNeeds.length + 1}`,
+        category: category ? { id: category.id, name: category.name } : null,
+      });
+
+      state.insertedNeeds.push(body);
+      state.needs.unshift(row);
+      await respondRows(route, [{ id: row.id }]);
+      return;
+    }
+
+    const rows = filterNeeds(state.needs, url);
+
+    if (method === "PATCH") {
+      const body = request.postDataJSON() as Partial<NeedRow>;
+      rows.forEach((row) => Object.assign(row, body));
+      await respondRows(route, rows.map((row) => ({ id: row.id })));
+      return;
+    }
+
+    if (method === "DELETE") {
+      state.needs = state.needs.filter((row) => !rows.includes(row));
+      await respondRows(route, rows.map((row) => ({ id: row.id })));
+      return;
+    }
+
+    state.needRequests.push(request.url());
+
+    if ((request.headers()["accept"] ?? "").includes("vnd.pgrst.object+json")) {
+      await respondRows(route, rows);
+      return;
+    }
+
+    // `count: "exact"` lê o total do content-range
+    await route.fulfill({
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "content-type": "application/json",
+        "content-range": rows.length
+          ? `0-${rows.length - 1}/${rows.length}`
+          : "*/0",
+      },
+      body: JSON.stringify(rows),
     });
   });
 

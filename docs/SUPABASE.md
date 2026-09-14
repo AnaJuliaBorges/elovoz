@@ -63,11 +63,21 @@ A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
    A ordem é `profiles` → `ongs` → `ong_contacts`.
 3. **`verification_status` explícito.** A policy exige o valor `'pending'` no
    INSERT; não basta contar com o default da coluna.
-4. **Brecha de auto-promoção a admin.** `prevent_user_type_escalation` só roda
-   em UPDATE, e `profiles_insert_own` não olha o `user_type` — dá para se
-   cadastrar como `admin` direto pelo client. O arquivo
-   `supabase/sql/fix_user_type_on_insert.sql` fecha isso com um trigger
-   `before insert`. **Rode antes de publicar.**
+4. **Brecha de auto-promoção a admin (corrigida no banco).**
+   `prevent_user_type_escalation` só roda em UPDATE, e `profiles_insert_own`
+   não olha o `user_type`: dava para se cadastrar como `admin` direto pelo
+   client. Um trigger `before insert` fecha isso. Ele foi aplicado pelo SQL
+   Editor e o script foi apagado, então **não está em `supabase/migrations/`**.
+   Se recriar o banco a partir das migrations, recrie esse trigger.
+5. **UPDATE/DELETE barrado pela RLS não dá erro.** Só afeta zero linhas. Os
+   services de `needs` encadeiam `.select("id").single()` para que isso vire o
+   erro `PGRST116` e a tela consiga avisar.
+6. **Filtro em tabela embutida precisa de `!inner`.** A busca usa
+   `ong:ongs!inner(...)` com `.eq("ong.city_id", ...)`. Sem o `!inner`, o
+   PostgREST só esvazia o objeto `ong` e a necessidade continua na lista.
+7. **ONG `pending` não publica.** A policy `needs_insert_approved_ong` recusa o
+   INSERT com erro `42501`; o painel já esconde o botão, e `needErrorMessage`
+   traduz o erro caso ele apareça.
 
 ## Ainda não configurado
 

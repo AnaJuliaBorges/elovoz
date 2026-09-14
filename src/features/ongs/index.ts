@@ -1,3 +1,5 @@
-// API pública da feature `ongs`.
-// Ainda vazia: perfil público da ONG, edição dos dados institucionais e seguir/deixar de seguir (RF05, RF11).
-export {};
+export { useMyOng, MY_ONG_QUERY_KEY } from "./hooks/useMyOng";
+
+export { fetchMyOng } from "./services/ongs";
+
+export type { MyOng, VerificationStatus } from "./model/ong";

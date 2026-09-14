@@ -20,8 +20,12 @@ export function createQueryBuilder(result: QueryResult = {}) {
     update: vi.fn(() => builder),
     delete: vi.fn(() => builder),
     eq: vi.fn(() => builder),
+    in: vi.fn(() => builder),
+    ilike: vi.fn(() => builder),
+    or: vi.fn(() => builder),
     order: vi.fn(() => builder),
     limit: vi.fn(() => builder),
+    range: vi.fn(() => builder),
     single: vi.fn(async () => value),
     maybeSingle: vi.fn(async () => value),
     then: (

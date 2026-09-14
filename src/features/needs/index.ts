@@ -1,3 +1,15 @@
-// API pública da feature `needs`.
-// Ainda vazia: cadastro, busca com filtros e mudança de status das necessidades (RF03, RF04, RF07).
-export {};
+export { useNeed } from "./hooks/useNeedQueries";
+export { useCategories } from "./hooks/useCategories";
+
+export { NeedStatusBadge, UrgencyBadge } from "./components/NeedBadges";
+
+export {
+  NEED_STATUS_LABELS,
+  URGENCY_LABELS,
+  formatOngLocation,
+  type Category,
+  type Need,
+  type NeedStatus,
+  type NeedWithOng,
+  type Urgency,
+} from "./model/need";

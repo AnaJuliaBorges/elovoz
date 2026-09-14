@@ -1,8 +1,10 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   EMAIL,
   PASSWORD,
   USER_ID,
+  chooseOption,
+  login,
   setupSupabaseMocks,
   type ProfileRow,
 } from "./supabaseMocks";
@@ -15,18 +17,6 @@ const donorProfile: ProfileRow = {
   created_at: new Date().toISOString(),
 };
 
-async function fillLoginForm(page: Page) {
-  await page.getByRole("textbox", { name: "E-mail" }).fill(EMAIL);
-  await page.getByLabel("Senha", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: "Entrar" }).click();
-}
-
-/** Radix Select: abre pelo trigger e escolhe a opção pelo nome */
-async function chooseOption(page: Page, trigger: string, option: string) {
-  await page.getByRole("combobox", { name: trigger }).click();
-  await page.getByRole("option", { name: option }).click();
-}
-
 test.describe("Autenticação no Elovoz", () => {
   test("faz login e leva o doador para as necessidades", async ({ page }) => {
     await setupSupabaseMocks(page, { profile: donorProfile });
@@ -35,7 +25,7 @@ test.describe("Autenticação no Elovoz", () => {
     await page.getByRole("link", { name: "Já tenho conta" }).click();
     await expect(page).toHaveURL(/\/login/);
 
-    await fillLoginForm(page);
+    await login(page);
 
     await expect(page).toHaveURL(/\/necessidades/);
     await expect(
@@ -49,7 +39,7 @@ test.describe("Autenticação no Elovoz", () => {
     });
 
     await page.goto("/login");
-    await fillLoginForm(page);
+    await login(page);
 
     await expect(page).toHaveURL(/\/painel/);
   });
@@ -60,7 +50,7 @@ test.describe("Autenticação no Elovoz", () => {
     await setupSupabaseMocks(page, { loginFails: true });
 
     await page.goto("/login");
-    await fillLoginForm(page);
+    await login(page);
 
     await expect(page.getByText("E-mail ou senha inválidos")).toBeVisible();
     await expect(page).toHaveURL(/\/login/);

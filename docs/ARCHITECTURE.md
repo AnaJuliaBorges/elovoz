@@ -11,8 +11,10 @@ src/
 ├── App.tsx                  # elemento raiz: scroll reset + <Outlet /> + Toaster
 ├── index.css                # tokens do tema (Tailwind v4, @theme)
 ├── routes/guards.ts         # protectedLoader, publicOnlyLoader, ongLoader, adminLoader
-├── lib/                     # supabase, queryClient, reportError, masks, utils
-├── hooks/useLocations.ts    # estados e cidades (selects encadeados)
+├── lib/                     # supabase, queryClient, reportError, masks, dates, utils
+├── hooks/
+│   ├── useLocations.ts      # estados e cidades (selects encadeados)
+│   └── useDebouncedValue.ts # atraso para campos de texto livre (filtro de bairro)
 ├── components/
 │   ├── layout/              # LayoutWrapper, MenuBar, RouteError, Placeholder
 │   ├── shared/              # BackButton, LocationFields
@@ -33,9 +35,11 @@ splitting funcionar.
 | `/login` | AuthLayout | `publicOnlyLoader` | ✅ |
 | `/cadastrar` | AuthLayout | — | wizard doador/ONG ✅ |
 | `/recuperar-senha`, `/redefinir-senha` | AuthLayout | — | ✅ |
-| `/necessidades`, `/necessidades/:id` | AppLayout | `protectedLoader` | placeholder (RF04, RF06) |
+| `/necessidades` | AppLayout | `protectedLoader` | busca com filtros ✅ (RF04) |
+| `/necessidades/:id` | AppLayout | `protectedLoader` | detalhe ✅ — falta o botão de interesse (RF06) |
 | `/ongs/:id` | AppLayout | `protectedLoader` | placeholder (RF05, RF11) |
-| `/painel` | AppLayout | `ongLoader` | placeholder (RF03, RF07) |
+| `/painel` | AppLayout | `ongLoader` | necessidades da ONG + status ✅ (RF03, RF07) |
+| `/painel/necessidades/nova`, `/painel/necessidades/:id/editar` | AppLayout | `ongLoader` | form de necessidade ✅ (RF03) |
 | `/minhas-doacoes` | AppLayout | `protectedLoader` | placeholder (RF10) |
 | `/notificacoes` | AppLayout | `protectedLoader` | placeholder (RF09) |
 | `/perfil` | AppLayout | `protectedLoader` | placeholder |
@@ -84,11 +88,45 @@ de erro parcial não duplica nada. O erro carrega o estágio que falhou
 propósito, recarregar a página no meio do wizard devolve o usuário ao passo 1
 com um aviso — o resto dos dados continua preenchido.
 
+### `needs` (implementada)
+
+Cadastro, busca e status das necessidades (RF03, RF04, RF07).
+
+| Arquivo | Papel |
+|---|---|
+| `pages/SearchNeedsPage.tsx` | busca do doador; os filtros moram na URL (`?categoria=&urgencia=&estado=&cidade=&bairro=`), então voltar do detalhe não perde nada |
+| `pages/NeedDetailPage.tsx` | detalhe + link para a ONG; "Editar" só aparece para a ONG dona |
+| `pages/OngDashboardPage.tsx` | painel: aviso de cadastro pendente/recusado, lista com status, editar e excluir |
+| `pages/CreateNeedPage.tsx`, `pages/EditNeedPage.tsx` | carregam os dados e só então montam o `NeedForm` (sem `reset()` tardio) |
+| `components/NeedForm.tsx` | form de criar/editar |
+| `components/NeedFiltersBar.tsx` | categoria, urgência, estado/cidade e bairro (com debounce) |
+| `components/OngNeedItem.tsx` | linha do painel: select de status, editar, excluir com confirmação |
+| `components/NeedCard.tsx`, `components/NeedBadges.tsx` | card da busca; badges de urgência e de status |
+| `model/need.ts` | tipos, rótulos em português, `formatOngLocation` |
+| `model/schema.ts` | `needSchema`, `emptyNeedForm`, `needToForm` |
+| `model/filters.ts` | filtros ↔ query string |
+| `services/needs.ts` | busca paginada, CRUD e `needErrorMessage` |
+| `services/categories.ts` | categorias, com "Outros" por último |
+| `hooks/useNeedQueries.ts`, `hooks/useNeedMutations.ts`, `hooks/useCategories.ts` | TanStack Query; toda escrita invalida `["needs"]` |
+
+**Regras da busca:** só `open` e `partially_fulfilled`, com prazo vazio ou a
+partir de hoje; urgência alta primeiro, depois as mais novas; 12 por página
+("Carregar mais"). A RLS já esconde as ONGs não aprovadas.
+
+**Painel:** o `ongLoader` garante o papel `ong`, mas o que aparece depende do
+`verification_status` da ONG (`useMyOng`, da feature `ongs`). Só ONG aprovada vê
+a lista e o botão de nova necessidade, porque a policy de INSERT recusaria as
+outras de qualquer jeito.
+
+### `ongs` (parcial)
+
+Por enquanto só `useMyOng` / `fetchMyOng`: a ONG do usuário logado (`id`,
+`trade_name`, `verification_status`), usada pelo painel e pelo detalhe.
+
 ### Próximas features (pastas criadas, sem implementação)
 
 | Feature | Escopo | Requisitos |
 |---|---|---|
-| `needs` | cadastro, busca com filtros e status das necessidades | RF03, RF04, RF07 |
 | `ongs` | perfil público da ONG, edição, seguir/deixar de seguir | RF05, RF11 |
 | `donations` | interesse do doador e histórico | RF06, RF10 |
 | `notifications` | avisos in-app das ONGs seguidas | RF09 |

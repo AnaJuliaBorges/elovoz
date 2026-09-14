@@ -53,28 +53,33 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          // as telas abaixo ainda são placeholders: o shell logado já navega,
-          // as features entram nas próximas etapas
           {
             path: "necessidades",
             loader: protectedLoader,
-            element: (
-              <Placeholder
-                title="Necessidades"
-                description="Aqui entra a busca de necessidades com filtros de categoria, urgência e localização (RF04)."
-              />
-            ),
+            lazy: lazyPage(() => import("./features/needs/pages/SearchNeedsPage")),
           },
           {
             path: "necessidades/:id",
             loader: protectedLoader,
-            element: (
-              <Placeholder
-                title="Detalhe da necessidade"
-                description="Detalhe da necessidade e o botão de manifestar interesse (RF06)."
-              />
-            ),
+            lazy: lazyPage(() => import("./features/needs/pages/NeedDetailPage")),
           },
+          {
+            path: "painel",
+            loader: ongLoader,
+            lazy: lazyPage(() => import("./features/needs/pages/OngDashboardPage")),
+          },
+          {
+            path: "painel/necessidades/nova",
+            loader: ongLoader,
+            lazy: lazyPage(() => import("./features/needs/pages/CreateNeedPage")),
+          },
+          {
+            path: "painel/necessidades/:id/editar",
+            loader: ongLoader,
+            lazy: lazyPage(() => import("./features/needs/pages/EditNeedPage")),
+          },
+          // as telas abaixo ainda são placeholders: o shell logado já navega,
+          // as features entram nas próximas etapas
           {
             path: "ongs/:id",
             loader: protectedLoader,
@@ -82,16 +87,6 @@ export const router = createBrowserRouter([
               <Placeholder
                 title="Perfil da ONG"
                 description="Perfil público da instituição, contatos e botão de seguir (RF05 e RF11)."
-              />
-            ),
-          },
-          {
-            path: "painel",
-            loader: ongLoader,
-            element: (
-              <Placeholder
-                title="Painel da ONG"
-                description="Necessidades cadastradas, status e dados da instituição (RF03 e RF07)."
               />
             ),
           },
