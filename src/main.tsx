@@ -79,6 +79,11 @@ export const router = createBrowserRouter([
             lazy: lazyPage(() => import("./features/needs/pages/EditNeedPage")),
           },
           {
+            path: "painel/horarios",
+            loader: ongLoader,
+            lazy: lazyPage(() => import("./features/ongs/pages/OngHoursPage")),
+          },
+          {
             path: "ongs/:id",
             loader: protectedLoader,
             lazy: lazyPage(() => import("./features/ongs/pages/OngProfilePage")),

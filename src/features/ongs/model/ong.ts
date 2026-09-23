@@ -1,4 +1,5 @@
 import { onlyDigits } from "@/lib/masks";
+import type { OpeningHour } from "./openingHours";
 
 export type VerificationStatus = "pending" | "approved" | "rejected";
 
@@ -33,6 +34,7 @@ export interface OngProfile {
   city: { name: string } | null;
   state: { uf: string } | null;
   contacts: OngContact[];
+  opening_hours: OpeningHour[];
 }
 
 /** "Rio de Janeiro - RJ" */

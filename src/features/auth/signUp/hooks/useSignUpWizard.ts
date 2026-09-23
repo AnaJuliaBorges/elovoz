@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { getErrorMessage } from "@/lib/utils";
+import {
+  openingHoursToRows,
+  type OpeningHoursFormInput,
+} from "@/features/ongs";
 import { registerDonor, registerOng, SignUpError } from "../../services/signUp";
 import { PROFILE_QUERY_KEY } from "../../hooks/useProfile";
 import { homeFor } from "../../model/profile";
@@ -82,8 +86,15 @@ export function useSignUpWizard() {
     nextStep();
   }
 
-  async function submitOngContact(values: OngContactFormInput) {
+  function submitOngContact(values: OngContactFormInput) {
     update("contact", values);
+    setError(null);
+    nextStep();
+  }
+
+  // último passo da ONG: é aqui que o cadastro inteiro é gravado
+  async function submitOngHours(values: OpeningHoursFormInput) {
+    update("hours", values);
     setError(null);
     setSubmitting(true);
 
@@ -91,7 +102,8 @@ export function useSignUpWizard() {
       const userId = await registerOng({
         account: data.account,
         data: data.ongData ?? emptyOngData,
-        contact: values,
+        contact: data.contact ?? emptyOngContact,
+        hours: openingHoursToRows(values),
         existingUserId,
       });
 
@@ -114,5 +126,6 @@ export function useSignUpWizard() {
     submitAccount,
     submitOngData,
     submitOngContact,
+    submitOngHours,
   };
 }

@@ -29,22 +29,6 @@ function renderForm(props: Partial<ComponentProps<typeof NeedForm>> = {}) {
   return { onSubmit };
 }
 
-beforeAll(() => {
-  // o RadioGroup do Radix mede os itens com ResizeObserver, que o jsdom não tem
-  vi.stubGlobal(
-    "ResizeObserver",
-    class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    },
-  );
-});
-
-afterAll(() => {
-  vi.unstubAllGlobals();
-});
-
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(useCategories).mockReturnValue({ data: categories } as never);

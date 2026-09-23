@@ -135,6 +135,7 @@ export type OngProfileRow = {
   city: { name: string } | null;
   state: { uf: string } | null;
   contacts: { id: string; number: string; whatsapp: boolean }[];
+  opening_hours: { weekday: number; opens_at: string; closes_at: string }[];
 };
 
 export function ongProfileRow(
@@ -157,6 +158,12 @@ export function ongProfileRow(
     city: { name: "Rio de Janeiro" },
     state: { uf: "RJ" },
     contacts: [{ id: "contact-1", number: "21999991234", whatsapp: true }],
+    opening_hours: [
+      { weekday: 1, opens_at: "09:00:00", closes_at: "17:00:00" },
+      { weekday: 2, opens_at: "09:00:00", closes_at: "17:00:00" },
+      { weekday: 3, opens_at: "09:00:00", closes_at: "17:00:00" },
+      { weekday: 6, opens_at: "08:00:00", closes_at: "12:00:00" },
+    ],
     ...overrides,
   };
 }
@@ -284,6 +291,8 @@ export type MockState = {
   follows: { donor_id: string; ong_id: string }[];
   /** interesses manifestados (RF06) */
   interests: InterestRow[];
+  /** horários de funcionamento gravados */
+  openingHours: Record<string, unknown>[];
 };
 
 export async function setupSupabaseMocks(
@@ -306,6 +315,7 @@ export async function setupSupabaseMocks(
     needRequests: [],
     follows: [],
     interests: [...interests],
+    openingHours: [],
   };
 
   await page.route("**/auth/v1/token*", async (route) => {
@@ -464,6 +474,40 @@ export async function setupSupabaseMocks(
       route,
       matches.map((_, index) => ({ id: `follow-${index + 1}` })),
     );
+  });
+
+  await page.route("**/rest/v1/ong_opening_hours*", async (route) => {
+    const request = route.request();
+    const method = request.method();
+    if (method === "OPTIONS") return preflight(route);
+
+    if (method === "POST") {
+      const body = request.postDataJSON() as Record<string, unknown>[];
+      state.openingHours.push(...body);
+      await route.fulfill({ status: 201, headers: corsHeaders, body: "" });
+      return;
+    }
+
+    if (method === "DELETE") {
+      state.openingHours = [];
+      await route.fulfill({ status: 204, headers: corsHeaders, body: "" });
+      return;
+    }
+
+    // `select(..., { count: "exact", head: true })` vira HEAD + content-range
+    if (method === "HEAD") {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "content-range": `*/${state.openingHours.length}`,
+        },
+        body: "",
+      });
+      return;
+    }
+
+    await respondRows(route, state.openingHours);
   });
 
   await page.route("**/rest/v1/interests*", async (route) => {

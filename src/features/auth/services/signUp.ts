@@ -1,5 +1,6 @@
 import { AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import type { OpeningHour } from "@/features/ongs";
 import { onlyDigits } from "@/lib/masks";
 import { createProfile, fetchProfile } from "./profiles";
 import type {
@@ -13,7 +14,12 @@ import type {
  * client: guardamos em qual delas parou pra poder retomar sem recriar a
  * conta.
  */
-export type SignUpStage = "account" | "profile" | "ong" | "contacts";
+export type SignUpStage =
+  | "account"
+  | "profile"
+  | "ong"
+  | "contacts"
+  | "hours";
 
 export class SignUpError extends Error {
   stage: SignUpStage;
@@ -113,9 +119,10 @@ export async function registerOng(input: {
   account: AccountFormInput;
   data: OngDataFormInput;
   contact: OngContactFormInput;
+  hours: OpeningHour[];
   existingUserId?: string;
 }): Promise<string> {
-  const { account, data, contact } = input;
+  const { account, data, contact, hours } = input;
   const userId = input.existingUserId ?? (await createAccount(account));
 
   // a policy `ongs_insert_own` chama current_user_type(), que lê profiles:
@@ -124,6 +131,7 @@ export async function registerOng(input: {
 
   const ongId = await upsertOng(userId, data, contact);
   await insertContacts(ongId, contact);
+  await insertOpeningHours(ongId, hours);
 
   return userId;
 }
@@ -201,6 +209,39 @@ async function insertContacts(ongId: string, contact: OngContactFormInput) {
 
   if (error) {
     throw new SignUpError("contacts", "Não foi possível salvar os contatos.", {
+      cause: error,
+    });
+  }
+}
+
+/** Como `insertContacts`: relê antes de gravar, para a retentativa não duplicar. */
+async function insertOpeningHours(ongId: string, hours: OpeningHour[]) {
+  if (hours.length === 0) return;
+
+  const { count, error: countError } = await supabase
+    .from("ong_opening_hours")
+    .select("id", { count: "exact", head: true })
+    .eq("ong_id", ongId);
+
+  if (countError) {
+    throw new SignUpError("hours", "Não foi possível salvar os horários.", {
+      cause: countError,
+    });
+  }
+
+  if (count && count > 0) return;
+
+  const { error } = await supabase.from("ong_opening_hours").insert(
+    hours.map((hour) => ({
+      ong_id: ongId,
+      weekday: hour.weekday,
+      opens_at: hour.opens_at,
+      closes_at: hour.closes_at,
+    })),
+  );
+
+  if (error) {
+    throw new SignUpError("hours", "Não foi possível salvar os horários.", {
       cause: error,
     });
   }

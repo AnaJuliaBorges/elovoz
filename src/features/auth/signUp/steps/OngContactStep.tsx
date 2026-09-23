@@ -19,14 +19,10 @@ export function OngContactStep({
   defaultValues,
   onSubmit,
   onBack,
-  submitting,
-  error,
 }: {
   defaultValues: OngContactFormInput;
-  onSubmit: (values: OngContactFormInput) => void | Promise<void>;
+  onSubmit: (values: OngContactFormInput) => void;
   onBack: () => void;
-  submitting: boolean;
-  error: string | null;
 }) {
   const {
     control,
@@ -155,18 +151,12 @@ export function OngContactStep({
         </Field>
       </FieldGroup>
 
-      {error && (
-        <p role="alert" className="rounded-md bg-destructive-light p-3 text-sm text-destructive">
-          {error}
-        </p>
-      )}
-
       <div className="flex gap-3">
         <Button type="button" variant="outline" onClick={onBack}>
           Voltar
         </Button>
-        <Button type="submit" className="flex-1" disabled={submitting}>
-          {submitting ? "Enviando..." : "Enviar cadastro"}
+        <Button type="submit" className="flex-1">
+          Continuar
         </Button>
       </div>
     </form>

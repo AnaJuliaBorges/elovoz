@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BackButton } from "@/components/shared/BackButton";
+import { emptyOpeningHoursForm } from "@/features/ongs";
 import { useSignUpWizardStore } from "../signUp/store/useSignUpWizardStore";
 import {
   emptyOngContact,
@@ -10,6 +11,7 @@ import {
 import { AccountStep } from "../signUp/steps/AccountStep";
 import { OngDataStep } from "../signUp/steps/OngDataStep";
 import { OngContactStep } from "../signUp/steps/OngContactStep";
+import { OngHoursStep } from "../signUp/steps/OngHoursStep";
 import { PendingReview } from "../signUp/steps/PendingReview";
 import icone from "@/assets/icone.png";
 
@@ -17,6 +19,7 @@ const ONG_STEP_TITLES = [
   "Criar conta",
   "Dados da instituição",
   "Localização e contato",
+  "Horários de funcionamento",
 ];
 
 export default function SignUpPage() {
@@ -28,6 +31,7 @@ export default function SignUpPage() {
     submitAccount,
     submitOngData,
     submitOngContact,
+    submitOngHours,
   } = useSignUpWizard();
   const update = useSignUpWizardStore((state) => state.update);
 
@@ -36,7 +40,7 @@ export default function SignUpPage() {
   // a senha não é persistida (de propósito): se a página foi recarregada no
   // meio do wizard, não dá pra criar a conta no fim — voltamos ao passo 1
   const passwordLost =
-    data.step > 1 && data.step < 4 && !data.account.password && !data.userId;
+    data.step > 1 && data.step < 5 && !data.account.password && !data.userId;
 
   useEffect(() => {
     if (passwordLost) update("step", 1);
@@ -44,7 +48,7 @@ export default function SignUpPage() {
 
   const step = passwordLost ? 1 : data.step;
 
-  if (step === 4) {
+  if (step === 5) {
     return <PendingReview tradeName={data.ongData?.trade_name ?? "sua ONG"} />;
   }
 
@@ -61,7 +65,7 @@ export default function SignUpPage() {
         </h1>
 
         {isOng && (
-          <p className="text-sm text-muted-foreground">Passo {step} de 3</p>
+          <p className="text-sm text-muted-foreground">Passo {step} de 4</p>
         )}
       </header>
 
@@ -94,6 +98,14 @@ export default function SignUpPage() {
         <OngContactStep
           defaultValues={data.contact ?? emptyOngContact}
           onSubmit={submitOngContact}
+          onBack={prevStep}
+        />
+      )}
+
+      {step === 4 && (
+        <OngHoursStep
+          defaultValues={data.hours ?? emptyOpeningHoursForm}
+          onSubmit={submitOngHours}
           onBack={prevStep}
           submitting={submitting}
           error={error}

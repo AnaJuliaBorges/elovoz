@@ -39,6 +39,10 @@ const ong: OngProfile = {
   city: { name: "Rio de Janeiro" },
   state: { uf: "RJ" },
   contacts: [{ id: "c-1", number: "21999991234", whatsapp: true }],
+  opening_hours: [
+    { weekday: 1, opens_at: "09:00:00", closes_at: "17:00:00" },
+    { weekday: 2, opens_at: "09:00:00", closes_at: "17:00:00" },
+  ],
 };
 
 function need(overrides: Partial<NeedWithCategory> = {}): NeedWithCategory {
@@ -118,6 +122,8 @@ describe("OngProfilePage", () => {
       screen.getByText("Rua das Flores, 10 — Centro, Rio de Janeiro - RJ"),
     ).toBeInTheDocument();
     expect(screen.getByText("CNPJ 12.345.678/0001-95")).toBeInTheDocument();
+    expect(screen.getByText("Seg e Ter")).toBeInTheDocument();
+    expect(screen.getByText("09:00 às 17:00")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /\(21\) 99999-1234/ }),
     ).toBeInTheDocument();
@@ -164,6 +170,16 @@ describe("OngProfilePage", () => {
 
     expect(
       screen.getByText(/Nenhuma necessidade aberta no momento/),
+    ).toBeInTheDocument();
+  });
+
+  it("avisa quando a ONG não informou horários", () => {
+    mockProfile({ data: { ...ong, opening_hours: [] } });
+    mockNeeds();
+    renderPage();
+
+    expect(
+      screen.getByText(/ainda não informou os horários/),
     ).toBeInTheDocument();
   });
 

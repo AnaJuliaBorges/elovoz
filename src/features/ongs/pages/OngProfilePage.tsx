@@ -12,6 +12,7 @@ import {
 } from "@/features/needs";
 import { FollowOngButton } from "../components/FollowOngButton";
 import { OngContacts } from "../components/OngContacts";
+import { OngOpeningHours } from "../components/OngOpeningHours";
 import { useOngProfile } from "../hooks/useOngProfile";
 import {
   formatCityState,
@@ -246,6 +247,10 @@ export default function OngProfilePage() {
 
       <Section title="Contato">
         <OngContacts ong={ong} />
+      </Section>
+
+      <Section title="Quando abre">
+        <OngOpeningHours hours={ong.opening_hours} />
       </Section>
 
       <Section title="Onde fica">

@@ -71,7 +71,7 @@ test.describe("Autenticação no Elovoz", () => {
     expect(state.profile).toMatchObject({ user_type: "donor", name: "Ana E2E" });
   });
 
-  test("cadastra ONG em três passos e mostra o cadastro em análise", async ({
+  test("cadastra ONG em quatro passos e mostra o cadastro em análise", async ({
     page,
   }) => {
     const state = await setupSupabaseMocks(page);
@@ -89,7 +89,7 @@ test.describe("Autenticação no Elovoz", () => {
     await page.getByRole("button", { name: "Continuar" }).click();
 
     // passo 2 — dados institucionais
-    await expect(page.getByText("Passo 2 de 3")).toBeVisible();
+    await expect(page.getByText("Passo 2 de 4")).toBeVisible();
     await page
       .getByRole("textbox", { name: "Nome fantasia" })
       .fill("Casa Solidária");
@@ -103,7 +103,7 @@ test.describe("Autenticação no Elovoz", () => {
     await page.getByRole("button", { name: "Continuar" }).click();
 
     // passo 3 — localização e contato
-    await expect(page.getByText("Passo 3 de 3")).toBeVisible();
+    await expect(page.getByText("Passo 3 de 4")).toBeVisible();
     await chooseOption(page, "Estado", "Rio de Janeiro");
     await chooseOption(page, "Cidade", "Rio de Janeiro");
     await page.getByRole("textbox", { name: "Bairro" }).fill("Centro");
@@ -113,6 +113,16 @@ test.describe("Autenticação no Elovoz", () => {
     await page
       .getByRole("textbox", { name: "Telefone 1" })
       .fill("21998765432");
+    await page.getByRole("button", { name: "Continuar" }).click();
+
+    // passo 4 — horários de funcionamento
+    await expect(page.getByText("Passo 4 de 4")).toBeVisible();
+    await page.getByRole("checkbox", { name: "Segunda" }).click();
+    await page.getByLabel("Segunda: abre às").fill("09:00");
+    await page.getByLabel("Segunda: fecha às").fill("17:00");
+    await page
+      .getByRole("button", { name: "Repetir o primeiro horário de segunda a sexta" })
+      .click();
     await page.getByRole("button", { name: "Enviar cadastro" }).click();
 
     await expect(
@@ -128,6 +138,13 @@ test.describe("Autenticação no Elovoz", () => {
       city_id: "uuid-rio",
     });
     expect(state.contacts[0]).toMatchObject({ number: "21998765432" });
+    // segunda a sexta, com o mesmo horário, e fim de semana fechado
+    expect(state.openingHours).toHaveLength(5);
+    expect(state.openingHours[0]).toMatchObject({
+      weekday: 1,
+      opens_at: "09:00",
+      closes_at: "17:00",
+    });
   });
 
   test("pede o link de recuperação de senha", async ({ page }) => {

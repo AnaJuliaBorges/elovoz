@@ -53,6 +53,8 @@ const contact = {
   website: "",
 };
 
+const hours = [{ weekday: 1 as const, opens_at: "09:00", closes_at: "17:00" }];
+
 /** entrega um builder diferente a cada chamada de `from(tabela)` */
 function mockTables(tables: Record<string, QueryBuilderMock[]>) {
   fromMock.mockImplementation((table: string) => {
@@ -170,14 +172,17 @@ describe("registerOng", () => {
     const ongInsert = createQueryBuilder({ data: { id: "ong-1" } });
     const contactsCount = createQueryBuilder({ count: 0 });
     const contactsInsert = createQueryBuilder();
+    const hoursCount = createQueryBuilder({ count: 0 });
+    const hoursInsert = createQueryBuilder();
 
     mockTables({
       ongs: [ongLookup, ongInsert],
       ong_contacts: [contactsCount, contactsInsert],
+      ong_opening_hours: [hoursCount, hoursInsert],
     });
 
     await expect(
-      registerOng({ account, data: ongData, contact }),
+      registerOng({ account, data: ongData, contact, hours }),
     ).resolves.toBe("user-1");
 
     // o perfil precisa existir antes: `ongs_insert_own` chama current_user_type()
@@ -197,24 +202,75 @@ describe("registerOng", () => {
     expect(contactsInsert.insert).toHaveBeenCalledWith([
       { ong_id: "ong-1", number: "21998765432", whatsapp: true },
     ]);
+    expect(hoursInsert.insert).toHaveBeenCalledWith([
+      { ong_id: "ong-1", weekday: 1, opens_at: "09:00", closes_at: "17:00" },
+    ]);
+  });
+
+  it("não toca em `ong_opening_hours` quando nenhum dia foi marcado", async () => {
+    accountCreated();
+
+    mockTables({
+      ongs: [
+        createQueryBuilder({ data: null }),
+        createQueryBuilder({ data: { id: "ong-1" } }),
+      ],
+      ong_contacts: [createQueryBuilder({ count: 0 }), createQueryBuilder()],
+    });
+
+    await expect(
+      registerOng({ account, data: ongData, contact, hours: [] }),
+    ).resolves.toBe("user-1");
+  });
+
+  it("marca o estágio `hours` quando o INSERT dos horários falha", async () => {
+    accountCreated();
+
+    mockTables({
+      ongs: [
+        createQueryBuilder({ data: null }),
+        createQueryBuilder({ data: { id: "ong-1" } }),
+      ],
+      ong_contacts: [createQueryBuilder({ count: 0 }), createQueryBuilder()],
+      ong_opening_hours: [
+        createQueryBuilder({ count: 0 }),
+        createQueryBuilder({ error: new Error("violates RLS") }),
+      ],
+    });
+
+    const error = await registerOng({
+      account,
+      data: ongData,
+      contact,
+      hours,
+    }).catch((err: unknown) => err);
+
+    expect((error as SignUpError).stage).toBe("hours");
   });
 
   it("reaproveita a ONG já criada numa tentativa anterior", async () => {
     const ongLookup = createQueryBuilder({ data: { id: "ong-1" } });
     const contactsCount = createQueryBuilder({ count: 1 });
+    const hoursCount = createQueryBuilder({ count: 1 });
 
-    mockTables({ ongs: [ongLookup], ong_contacts: [contactsCount] });
+    mockTables({
+      ongs: [ongLookup],
+      ong_contacts: [contactsCount],
+      ong_opening_hours: [hoursCount],
+    });
 
     await registerOng({
       account,
       data: ongData,
       contact,
+      hours,
       existingUserId: "user-1",
     });
 
     expect(signUpMock).not.toHaveBeenCalled();
     expect(ongLookup.insert).not.toHaveBeenCalled();
     expect(contactsCount.insert).not.toHaveBeenCalled();
+    expect(hoursCount.insert).not.toHaveBeenCalled();
   });
 
   it("marca o estágio `ong` quando o INSERT da ONG falha", async () => {
@@ -227,9 +283,12 @@ describe("registerOng", () => {
       ],
     });
 
-    const error = await registerOng({ account, data: ongData, contact }).catch(
-      (err: unknown) => err,
-    );
+    const error = await registerOng({
+      account,
+      data: ongData,
+      contact,
+      hours,
+    }).catch((err: unknown) => err);
 
     expect((error as SignUpError).stage).toBe("ong");
   });
@@ -248,9 +307,12 @@ describe("registerOng", () => {
       ],
     });
 
-    const error = await registerOng({ account, data: ongData, contact }).catch(
-      (err: unknown) => err,
-    );
+    const error = await registerOng({
+      account,
+      data: ongData,
+      contact,
+      hours,
+    }).catch((err: unknown) => err);
 
     expect((error as SignUpError).stage).toBe("contacts");
   });

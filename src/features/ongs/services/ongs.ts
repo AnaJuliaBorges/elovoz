@@ -32,7 +32,8 @@ const ONG_PROFILE_COLUMNS = `
   id, profile_id, trade_name, legal_name, cnpj, mission, neighborhood, address,
   instagram, facebook, website, verification_status, created_at,
   city:cities(name), state:states(uf),
-  contacts:ong_contacts(id, number, whatsapp)
+  contacts:ong_contacts(id, number, whatsapp),
+  opening_hours:ong_opening_hours(weekday, opens_at, closes_at)
 `;
 
 /**

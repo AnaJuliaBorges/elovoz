@@ -40,6 +40,7 @@ splitting funcionar.
 | `/ongs/:id` | AppLayout | `protectedLoader` | perfil público + seguir ✅ (RF05, RF11) |
 | `/painel` | AppLayout | `ongLoader` | necessidades da ONG + status ✅ (RF03, RF07) |
 | `/painel/necessidades/nova`, `/painel/necessidades/:id/editar` | AppLayout | `ongLoader` | form de necessidade ✅ (RF03) |
+| `/painel/horarios` | AppLayout | `ongLoader` | horários de funcionamento da ONG ✅ |
 | `/minhas-doacoes` | AppLayout | `protectedLoader` | placeholder — histórico de interesses e ONGs seguidas |
 | `/notificacoes` | AppLayout | `protectedLoader` | placeholder (RF09) |
 | `/perfil` | AppLayout | `protectedLoader` | placeholder |
@@ -70,17 +71,22 @@ Login, cadastro e recuperação de senha.
 | `hooks/useLogin.ts`, `hooks/useLogout.ts` | entrar e sair |
 | `signUp/store/useSignUpWizardStore.ts` | estado do wizard (Zustand + persist) |
 | `signUp/hooks/useSignUpWizard.ts` | passo a passo, submits e erros |
-| `signUp/steps/*` | `AccountStep`, `OngDataStep`, `OngContactStep`, `PendingReview` |
+| `signUp/steps/*` | `AccountStep`, `OngDataStep`, `OngContactStep`, `OngHoursStep`, `PendingReview` |
 
 **Cadastro de doador:** 1 passo → `signUp` → `profiles` (`donor`) → vai para
 `/necessidades`.
 
-**Cadastro de ONG:** 3 passos (conta → dados institucionais → localização e
-contato). As gravações só acontecem no fim, nesta ordem obrigatória:
+**Cadastro de ONG:** 4 passos (conta → dados institucionais → localização e
+contato → horários de funcionamento). As gravações só acontecem no fim, nesta
+ordem obrigatória:
 
 ```
-auth.signUp → profiles (user_type='ong') → ongs (verification_status='pending') → ong_contacts
+auth.signUp → profiles (user_type='ong') → ongs (verification_status='pending')
+  → ong_contacts → ong_opening_hours
 ```
+
+Os horários são opcionais: quem não marcar nenhum dia termina o cadastro do
+mesmo jeito e preenche depois em `/painel/horarios`.
 
 Cada etapa é idempotente (relê antes de gravar), então uma nova tentativa depois
 de erro parcial não duplica nada. O erro carrega o estágio que falhou
@@ -131,7 +137,12 @@ Perfil público da instituição e seguir/deixar de seguir (RF05, RF11), mais o
 | `model/ong.ts` | `MyOng`, `OngProfile`, `OngContact`, formatação de endereço e links das redes |
 | `services/ongs.ts` | `fetchMyOng` (por `profile_id`) e `fetchOngProfile` (por `id`, com embeds) |
 | `services/ongFollowers.ts` | `fetchIsFollowingOng`, `followOng`, `unfollowOng`, `followErrorMessage` |
-| `hooks/useMyOng.ts`, `hooks/useOngProfile.ts`, `hooks/useFollowOng.ts` | TanStack Query; `queryKeys.ts` guarda as chaves |
+| `pages/OngHoursPage.tsx` | `/painel/horarios`: a ONG edita a própria semana |
+| `components/OpeningHoursFields.tsx` | os sete dias com "abre" + faixa de horário; controlado, porque serve o cadastro e o painel |
+| `components/OngOpeningHours.tsx` | a mesma semana agrupada para leitura no perfil |
+| `model/openingHours.ts` | `OpeningHour`, schema, conversões formulário↔banco e `groupOpeningHours` |
+| `services/ongOpeningHours.ts` | `fetchOngOpeningHours` e `saveOngOpeningHours` |
+| `hooks/useMyOng.ts`, `hooks/useOngProfile.ts`, `hooks/useFollowOng.ts`, `hooks/useOngOpeningHours.ts` | TanStack Query; `queryKeys.ts` guarda as chaves |
 
 **O que o perfil mostra:** dados institucionais, missão, contatos, endereço e
 CNPJ, mais as necessidades da ONG divididas em "Precisa agora" (as que ainda dão
@@ -145,8 +156,16 @@ doador — a policy de INSERT em `ong_followers` exige
 dar erro. Seguir duas vezes não é erro: o par (`donor_id`, `ong_id`) é único e o
 service engole o `23505`.
 
-**Falta:** a ONG editar os próprios dados institucionais (nada no perfil leva a
-um formulário de edição ainda).
+**Horários de funcionamento:** uma linha por dia da semana em
+`ong_opening_hours` (0 = domingo, igual ao `extract(dow)`), preenchida no último
+passo do cadastro e editável em `/painel/horarios`. O formulário mostra a semana
+começando na segunda e tem um atalho que repete o primeiro horário nos dias
+úteis; salvar substitui a semana inteira (apaga e regrava), que para sete linhas
+sai mais simples do que diferença linha a linha. No perfil, dias vizinhos com a
+mesma faixa viram "Seg a Sex" e dias salteados viram "Seg, Qua e Sex".
+
+**Falta:** a ONG editar o resto dos dados institucionais (nome, missão,
+endereço, contatos e redes) — hoje só os horários têm tela de edição.
 
 ### `donations` (implementada, menos o histórico)
 

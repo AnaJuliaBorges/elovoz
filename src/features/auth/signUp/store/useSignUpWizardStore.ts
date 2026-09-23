@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { OpeningHoursFormInput } from "@/features/ongs";
 import type {
   AccountFormInput,
   OngContactFormInput,
@@ -13,6 +14,7 @@ export interface SignUpWizardData {
   account: AccountFormInput;
   ongData: OngDataFormInput | null;
   contact: OngContactFormInput | null;
+  hours: OpeningHoursFormInput | null;
 }
 
 type SignUpWizardStore = {
@@ -39,6 +41,7 @@ export const initialData: SignUpWizardData = {
   },
   ongData: null,
   contact: null,
+  hours: null,
 };
 
 export const useSignUpWizardStore = create<SignUpWizardStore>()(

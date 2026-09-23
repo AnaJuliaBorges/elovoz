@@ -4,6 +4,12 @@ O schema e as policies já estão aplicados no projeto. O SQL correspondente est
 em `supabase/migrations/` (histórico do que rodou) e o que ainda precisa ser
 rodado à mão fica em `supabase/sql/`.
 
+> **Pendente agora:** `ong_opening_hours.sql` cria a tabela dos horários de
+> funcionamento e as policies dela — sem rodar esse script, o cadastro de ONG e
+> a tela `/painel/horarios` vão falhar. `seed_usuarios_teste.sql` cria contas de
+> teste (doadora, ONG aprovada, ONG pendente e admin, senha `elovoz123`); é
+> re-executável e pode ficar na pasta enquanto for útil.
+
 ## Enums
 
 | Enum | Valores |
@@ -25,6 +31,7 @@ etc.) em português, porque aparece para o usuário.
 | `cities` | `id`, `state_id`, `name` | único por (`state_id`, `name`); seed só com Rio de Janeiro |
 | `ongs` | `profile_id`, `trade_name`, `legal_name`, `cnpj`, `mission`, `state_id`, `city_id`, `neighborhood`, `address`, `instagram`, `facebook`, `website`, `verification_status` | uma ONG por perfil, na prática |
 | `ong_contacts` | `ong_id`, `number`, `whatsapp` | vários telefones, cada um marcado ou não como WhatsApp |
+| `ong_opening_hours` | `ong_id`, `weekday` (0-6, 0 = domingo), `opens_at`, `closes_at` | uma faixa por dia; único por (`ong_id`, `weekday`), com check de `closes_at > opens_at` |
 | `categories` | `id`, `name`, `icon` | seed com 10 categorias + "Outros" |
 | `needs` | `ong_id`, `category_id`, `title`, `description`, `quantity`, `urgency`, `deadline`, `status`, `created_at`, `updated_at` | `updated_at` mantido por trigger |
 | `interests` | `need_id`, `donor_id`, `message`, `expected_quantity`, `expected_deadline` | RF06 |
@@ -42,6 +49,7 @@ etc.) em português, porque aparece para o usuário.
 | `states`, `cities`, `categories` | pública | só admin |
 | `ongs` | pública se `approved`; dono e admin sempre | dono cria (exige `user_type='ong'` e `verification_status='pending'`); trigger impede auto-aprovação |
 | `ong_contacts` | onde a ONG for visível | dono da ONG ou admin |
+| `ong_opening_hours` | onde a ONG for visível | dona da ONG ou admin |
 | `needs` | onde a ONG for visível | só ONG `approved` cria; dono ou admin edita |
 | `interests` | doador autor, ONG dona da necessidade, ou admin | doador cria a própria |
 | `ong_followers` | próprio doador ou admin | doador segue/deixa de seguir |
