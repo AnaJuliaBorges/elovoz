@@ -97,7 +97,7 @@ Cadastro, busca e status das necessidades (RF03, RF04, RF07).
 | `pages/SearchNeedsPage.tsx` | busca do doador; os filtros moram na URL (`?categoria=&urgencia=&estado=&cidade=&bairro=`), então voltar do detalhe não perde nada |
 | `pages/NeedDetailPage.tsx` | detalhe + link para a ONG; "Editar" só aparece para a ONG dona |
 | `pages/OngDashboardPage.tsx` | painel: aviso de cadastro pendente/recusado, lista com status, editar e excluir |
-| `pages/CreateNeedPage.tsx`, `pages/EditNeedPage.tsx` | carregam os dados e só então montam o `NeedForm` (sem `reset()` tardio) |
+| `pages/CreateNeedPage.tsx`, `pages/EditNeedPage.tsx` | carregam os dados e só então montam o `NeedForm` (sem `reset()` tardio). Depois de salvar, a edição volta para onde a pessoa veio (`state.from`, aceito só se for caminho interno), e não sempre para o painel |
 | `components/NeedForm.tsx` | form de criar/editar |
 | `components/NeedFiltersBar.tsx` | categoria, urgência, estado/cidade e bairro (com debounce) |
 | `components/OngNeedItem.tsx` | linha do painel: select de status, editar, excluir com confirmação |

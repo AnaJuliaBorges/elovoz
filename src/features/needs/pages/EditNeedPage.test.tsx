@@ -70,15 +70,23 @@ function mockUpdate() {
   return result;
 }
 
-function renderPage() {
+function renderPage(from?: unknown) {
   render(
-    <MemoryRouter initialEntries={["/painel/necessidades/need-1/editar"]}>
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: "/painel/necessidades/need-1/editar",
+          state: from === undefined ? null : { from },
+        },
+      ]}
+    >
       <Routes>
         <Route
           path="/painel/necessidades/:id/editar"
           element={<EditNeedPage />}
         />
         <Route path="/painel" element={<p>painel</p>} />
+        <Route path="/necessidades/:id" element={<p>detalhe</p>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -135,6 +143,39 @@ describe("EditNeedPage", () => {
     expect(
       screen.queryByRole("button", { name: "Salvar alterações" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("volta para o detalhe quando foi de lá que a pessoa veio", async () => {
+    mockData();
+    mockUpdate();
+    const user = userEvent.setup();
+    renderPage("/necessidades/need-1");
+
+    await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(await screen.findByText("detalhe")).toBeInTheDocument();
+  });
+
+  it("ignora origem externa e cai no painel", async () => {
+    mockData();
+    mockUpdate();
+    const user = userEvent.setup();
+    renderPage("https://exemplo.com/phishing");
+
+    await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(await screen.findByText("painel")).toBeInTheDocument();
+  });
+
+  it("ignora URL protocolo-relativa como origem", async () => {
+    mockData();
+    mockUpdate();
+    const user = userEvent.setup();
+    renderPage("//exemplo.com");
+
+    await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(await screen.findByText("painel")).toBeInTheDocument();
   });
 
   it("trata necessidade inexistente do mesmo jeito", () => {

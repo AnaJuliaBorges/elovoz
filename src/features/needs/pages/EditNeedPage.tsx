@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button, Skeleton } from "@/components/ui";
 import { useMyOng } from "@/features/ongs";
@@ -10,7 +10,7 @@ import type { NeedWithOng } from "../model/need";
 import { needToForm, type NeedFormInput } from "../model/schema";
 import { needErrorMessage } from "../services/needs";
 
-function EditNeedForm({ need }: { need: NeedWithOng }) {
+function EditNeedForm({ need, backTo }: { need: NeedWithOng; backTo: string }) {
   const navigate = useNavigate();
   const updateNeed = useUpdateNeed();
 
@@ -18,7 +18,7 @@ function EditNeedForm({ need }: { need: NeedWithOng }) {
     try {
       await updateNeed.mutateAsync({ id: need.id, values });
       toast.success("Necessidade atualizada");
-      navigate("/painel");
+      navigate(backTo);
     } catch {
       // a mensagem aparece no form, a partir de `updateNeed.error`
     }
@@ -35,8 +35,17 @@ function EditNeedForm({ need }: { need: NeedWithOng }) {
   );
 }
 
+/** Só caminho interno: `state` vem do cliente e não pode virar redirect aberto. */
+function backTarget(from: unknown): string {
+  const internal =
+    typeof from === "string" && from.startsWith("/") && !from.startsWith("//");
+
+  return internal ? from : "/painel";
+}
+
 export default function EditNeedPage() {
   const { id = "" } = useParams();
+  const { state } = useLocation();
   const { data: need, isLoading: loadingNeed } = useNeed(id);
   const { data: ong, isLoading: loadingOng } = useMyOng();
 
@@ -65,7 +74,10 @@ export default function EditNeedPage() {
 
   return (
     <NeedPageShell title="Editar necessidade">
-      <EditNeedForm need={need} />
+      <EditNeedForm
+        need={need}
+        backTo={backTarget((state as { from?: unknown } | null)?.from)}
+      />
     </NeedPageShell>
   );
 }

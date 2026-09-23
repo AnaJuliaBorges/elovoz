@@ -1,5 +1,5 @@
-import { Link, useParams } from "react-router-dom";
-import { Building2, MapPin, Pencil } from "lucide-react";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { ArrowRight, Building2, MapPin, Pencil } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui";
 import { BackButton } from "@/components/shared/BackButton";
 import { formatDate } from "@/lib/dates";
@@ -11,6 +11,7 @@ import { formatOngLocation } from "../model/need";
 
 export default function NeedDetailPage() {
   const { id = "" } = useParams();
+  const { pathname } = useLocation();
   const { data: need, isLoading, isError, refetch } = useNeed(id);
 
   const { data: profile } = useProfile();
@@ -99,26 +100,45 @@ export default function NeedDetailPage() {
           Quem precisa
         </h2>
 
-        <p className="flex items-center gap-2 font-medium">
-          <Building2 className="size-5 text-secondary" aria-hidden="true" />
-          {need.ong.trade_name}
-        </p>
+        {/* sobra largura à direita do nome da ONG: no desktop o botão ocupa
+            ela, no celular vira CTA de largura cheia */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="flex flex-col gap-1">
+            <p className="flex items-center gap-2 font-medium">
+              <Building2 className="size-5 text-secondary" aria-hidden="true" />
+              {need.ong.trade_name}
+            </p>
 
-        {location && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="size-4" aria-hidden="true" />
-            {location}
-          </p>
-        )}
+            {location && (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="size-4" aria-hidden="true" />
+                {location}
+              </p>
+            )}
+          </div>
 
-        <Button variant="outline" size="lg" className="self-start" asChild>
-          <Link to={`/ongs/${need.ong.id}`}>Ver perfil da ONG</Link>
-        </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full sm:w-auto"
+            asChild
+          >
+            <Link to={`/ongs/${need.ong.id}`}>
+              Ver perfil da ONG
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
       </section>
 
+      {/* `from` leva de volta para cá depois de salvar, em vez de jogar quem
+          veio do detalhe no painel da ONG */}
       {isOwner && (
         <Button asChild>
-          <Link to={`/painel/necessidades/${need.id}/editar`}>
+          <Link
+            to={`/painel/necessidades/${need.id}/editar`}
+            state={{ from: pathname }}
+          >
             <Pencil aria-hidden="true" />
             Editar necessidade
           </Link>

@@ -115,6 +115,33 @@ test.describe("Painel da ONG", () => {
     expect(state.needs).toHaveLength(0);
   });
 
+  test("ONG edita pelo detalhe e volta para o detalhe", async ({ page }) => {
+    const state = await setupSupabaseMocks(page, {
+      profile: ongProfile,
+      ong: approvedOng,
+      needs: [needRow()],
+    });
+
+    await page.goto("/login");
+    await login(page);
+
+    await page.getByRole("link", { name: "Cestas básicas" }).click();
+    await expect(page).toHaveURL(/\/necessidades\/need-1$/);
+
+    await page.getByRole("link", { name: /Editar necessidade/ }).click();
+    await page
+      .getByRole("textbox", { name: "Título" })
+      .fill("Cestas básicas completas");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+
+    // quem veio do detalhe volta para o detalhe, não para o painel da ONG
+    await expect(page).toHaveURL(/\/necessidades\/need-1$/);
+    await expect(
+      page.getByRole("heading", { name: "Cestas básicas completas" }),
+    ).toBeVisible();
+    expect(state.needs[0].title).toBe("Cestas básicas completas");
+  });
+
   test("ONG em análise vê o aviso e não publica", async ({ page }) => {
     await setupSupabaseMocks(page, {
       profile: ongProfile,
