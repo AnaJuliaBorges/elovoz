@@ -37,7 +37,7 @@ splitting funcionar.
 | `/recuperar-senha`, `/redefinir-senha` | AuthLayout | — | ✅ |
 | `/necessidades` | AppLayout | `protectedLoader` | busca com filtros ✅ (RF04) |
 | `/necessidades/:id` | AppLayout | `protectedLoader` | detalhe ✅ — falta o botão de interesse (RF06) |
-| `/ongs/:id` | AppLayout | `protectedLoader` | placeholder (RF05, RF11) |
+| `/ongs/:id` | AppLayout | `protectedLoader` | perfil público + seguir ✅ (RF05, RF11) |
 | `/painel` | AppLayout | `ongLoader` | necessidades da ONG + status ✅ (RF03, RF07) |
 | `/painel/necessidades/nova`, `/painel/necessidades/:id/editar` | AppLayout | `ongLoader` | form de necessidade ✅ (RF03) |
 | `/minhas-doacoes` | AppLayout | `protectedLoader` | placeholder (RF10) |
@@ -101,8 +101,8 @@ Cadastro, busca e status das necessidades (RF03, RF04, RF07).
 | `components/NeedForm.tsx` | form de criar/editar |
 | `components/NeedFiltersBar.tsx` | categoria, urgência, estado/cidade e bairro (com debounce) |
 | `components/OngNeedItem.tsx` | linha do painel: select de status, editar, excluir com confirmação |
-| `components/NeedCard.tsx`, `components/NeedBadges.tsx` | card da busca; badges de urgência e de status |
-| `model/need.ts` | tipos, rótulos em português, `formatOngLocation` |
+| `components/NeedCard.tsx`, `components/NeedBadges.tsx` | card da busca (a ONG só aparece quando vem no embed — no perfil dela seria repetição); badges de urgência e de status |
+| `model/need.ts` | tipos, rótulos em português, `formatOngLocation`, `isOpenForDonation` |
 | `model/schema.ts` | `needSchema`, `emptyNeedForm`, `needToForm` |
 | `model/filters.ts` | filtros ↔ query string |
 | `services/needs.ts` | busca paginada, CRUD e `needErrorMessage` |
@@ -118,16 +118,40 @@ partir de hoje; urgência alta primeiro, depois as mais novas; 12 por página
 a lista e o botão de nova necessidade, porque a policy de INSERT recusaria as
 outras de qualquer jeito.
 
-### `ongs` (parcial)
+### `ongs` (implementada, menos a edição dos dados)
 
-Por enquanto só `useMyOng` / `fetchMyOng`: a ONG do usuário logado (`id`,
-`trade_name`, `verification_status`), usada pelo painel e pelo detalhe.
+Perfil público da instituição e seguir/deixar de seguir (RF05, RF11), mais o
+`useMyOng` que o painel usa.
+
+| Arquivo | Papel |
+|---|---|
+| `pages/OngProfilePage.tsx` | perfil: missão, contato, endereço e as necessidades da ONG |
+| `components/FollowOngButton.tsx` | toggle seguir/seguindo; só aparece para doador |
+| `components/OngContacts.tsx` | telefones (WhatsApp vai pro `wa.me`, fixo pro discador) e redes |
+| `model/ong.ts` | `MyOng`, `OngProfile`, `OngContact`, formatação de endereço e links das redes |
+| `services/ongs.ts` | `fetchMyOng` (por `profile_id`) e `fetchOngProfile` (por `id`, com embeds) |
+| `services/ongFollowers.ts` | `fetchIsFollowingOng`, `followOng`, `unfollowOng`, `followErrorMessage` |
+| `hooks/useMyOng.ts`, `hooks/useOngProfile.ts`, `hooks/useFollowOng.ts` | TanStack Query; `queryKeys.ts` guarda as chaves |
+
+**O que o perfil mostra:** dados institucionais, missão, contatos, endereço e
+CNPJ, mais as necessidades da ONG divididas em "Precisa agora" (as que ainda dão
+para atender, pela mesma regra da busca) e "Já atendidas" (RF10, histórico curto
+que serve de prova de trabalho). Reaproveita `NeedCard`, `useOngNeeds` e
+`isOpenForDonation` da feature `needs`.
+
+**Seguir (RF11):** botão toggle com `aria-pressed`, escondido para quem não é
+doador — a policy de INSERT em `ong_followers` exige
+`current_user_type() = 'donor'`, então para ONG e admin ele só existiria para
+dar erro. Seguir duas vezes não é erro: o par (`donor_id`, `ong_id`) é único e o
+service engole o `23505`.
+
+**Falta:** a ONG editar os próprios dados institucionais (nada no perfil leva a
+um formulário de edição ainda).
 
 ### Próximas features (pastas criadas, sem implementação)
 
 | Feature | Escopo | Requisitos |
 |---|---|---|
-| `ongs` | perfil público da ONG, edição, seguir/deixar de seguir | RF05, RF11 |
 | `donations` | interesse do doador e histórico | RF06, RF10 |
 | `notifications` | avisos in-app das ONGs seguidas | RF09 |
 | `admin` | aprovação/recusa de ONGs | RF08 |
@@ -145,3 +169,6 @@ Por enquanto só `useMyOng` / `fetchMyOng`: a ONG do usuário logado (`id`,
   a assinatura caso um serviço de erro entre depois.
 - **Autorização 100% no banco (RLS)**, sem RPC: o cliente fala com as tabelas e
   as policies decidem. Ver `docs/SUPABASE.md`.
+- **O perfil da ONG não mostra contagem de seguidores.** A policy de SELECT de
+  `ong_followers` devolve só as linhas do próprio doador, então um total seria
+  sempre 0 ou 1. Para exibir isso um dia seria preciso uma view/RPC agregada.

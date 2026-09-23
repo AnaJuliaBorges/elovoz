@@ -78,18 +78,13 @@ export const router = createBrowserRouter([
             loader: ongLoader,
             lazy: lazyPage(() => import("./features/needs/pages/EditNeedPage")),
           },
-          // as telas abaixo ainda são placeholders: o shell logado já navega,
-          // as features entram nas próximas etapas
           {
             path: "ongs/:id",
             loader: protectedLoader,
-            element: (
-              <Placeholder
-                title="Perfil da ONG"
-                description="Perfil público da instituição, contatos e botão de seguir (RF05 e RF11)."
-              />
-            ),
+            lazy: lazyPage(() => import("./features/ongs/pages/OngProfilePage")),
           },
+          // as telas abaixo ainda são placeholders: o shell logado já navega,
+          // as features entram nas próximas etapas
           {
             path: "minhas-doacoes",
             loader: protectedLoader,

@@ -1,11 +1,17 @@
 import { Building2, CalendarClock, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatDate } from "@/lib/dates";
-import { formatOngLocation, type NeedWithOng } from "../model/need";
+import {
+  formatOngLocation,
+  type NeedWithCategory,
+  type NeedWithOng,
+} from "../model/need";
 import { NeedStatusBadge, UrgencyBadge } from "./NeedBadges";
 
-export function NeedCard({ need }: { need: NeedWithOng }) {
-  const location = formatOngLocation(need.ong);
+/** Sem o embed da ONG (perfil da própria ONG), o card esconde essas linhas. */
+export function NeedCard({ need }: { need: NeedWithCategory | NeedWithOng }) {
+  const ong = "ong" in need ? need.ong : null;
+  const location = ong ? formatOngLocation(ong) : "";
 
   return (
     <Link
@@ -26,10 +32,12 @@ export function NeedCard({ need }: { need: NeedWithOng }) {
       )}
 
       <div className="mt-auto flex flex-col gap-1 text-sm text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <Building2 className="size-4 shrink-0" aria-hidden="true" />
-          {need.ong.trade_name}
-        </span>
+        {ong && (
+          <span className="flex items-center gap-1.5">
+            <Building2 className="size-4 shrink-0" aria-hidden="true" />
+            {ong.trade_name}
+          </span>
+        )}
 
         {location && (
           <span className="flex items-center gap-1.5">

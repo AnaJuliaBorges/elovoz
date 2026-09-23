@@ -117,6 +117,50 @@ export type OngRow = {
   verification_status: "pending" | "approved" | "rejected";
 };
 
+/** Linha de `ongs` com os embeds que o perfil público pede (RF05). */
+export type OngProfileRow = {
+  id: string;
+  profile_id: string;
+  trade_name: string;
+  legal_name: string;
+  cnpj: string;
+  mission: string;
+  neighborhood: string;
+  address: string;
+  instagram: string | null;
+  facebook: string | null;
+  website: string | null;
+  verification_status: "pending" | "approved" | "rejected";
+  created_at: string;
+  city: { name: string } | null;
+  state: { uf: string } | null;
+  contacts: { id: string; number: string; whatsapp: boolean }[];
+};
+
+export function ongProfileRow(
+  overrides: Partial<OngProfileRow> = {},
+): OngProfileRow {
+  return {
+    id: ONG_ID,
+    profile_id: "ong-owner",
+    trade_name: "Casa Solidária",
+    legal_name: "Associação Casa Solidária",
+    cnpj: "12345678000195",
+    mission: "Acolher famílias em situação de rua no centro da cidade",
+    neighborhood: "Centro",
+    address: "Rua das Flores, 10",
+    instagram: "@casasolidaria",
+    facebook: null,
+    website: null,
+    verification_status: "approved",
+    created_at: nowIso,
+    city: { name: "Rio de Janeiro" },
+    state: { uf: "RJ" },
+    contacts: [{ id: "contact-1", number: "21999991234", whatsapp: true }],
+    ...overrides,
+  };
+}
+
 export type NeedRow = {
   id: string;
   ong_id: string;
@@ -165,6 +209,13 @@ export function needRow(overrides: Partial<NeedRow> = {}): NeedRow {
   };
 }
 
+/** valor de um filtro `coluna=eq.valor` da URL do PostgREST */
+function eqParam(url: URL, column: string): string | null {
+  const filter = url.searchParams.get(column);
+
+  return filter?.startsWith("eq.") ? filter.slice(3) : null;
+}
+
 // filtros `coluna=eq.valor` que o mock entende; os outros (status, prazo,
 // embeds) passam direto
 const NEED_EQ_FILTERS = ["id", "ong_id", "category_id", "urgency"] as const;
@@ -188,6 +239,8 @@ export type MockOptions = {
   ong?: OngRow | null;
   /** necessidades que já existem no banco */
   needs?: NeedRow[];
+  /** ONG que o perfil público (`/ongs/:id`) encontra */
+  ongProfile?: OngProfileRow | null;
 };
 
 /** o que o banco fake gravou durante o teste */
@@ -200,11 +253,19 @@ export type MockState = {
   insertedNeeds: Record<string, unknown>[];
   /** URLs dos GETs em `needs`, para conferir os filtros */
   needRequests: string[];
+  /** pares (donor_id, ong_id) seguidos, como o banco fake guardou */
+  follows: { donor_id: string; ong_id: string }[];
 };
 
 export async function setupSupabaseMocks(
   page: Page,
-  { loginFails = false, profile = null, ong = null, needs = [] }: MockOptions = {},
+  {
+    loginFails = false,
+    profile = null,
+    ong = null,
+    needs = [],
+    ongProfile = null,
+  }: MockOptions = {},
 ): Promise<MockState> {
   const state: MockState = {
     profile,
@@ -213,6 +274,7 @@ export async function setupSupabaseMocks(
     needs: [...needs],
     insertedNeeds: [],
     needRequests: [],
+    follows: [],
   };
 
   await page.route("**/auth/v1/token*", async (route) => {
@@ -297,6 +359,17 @@ export async function setupSupabaseMocks(
       return;
     }
 
+    // `/ongs/:id` busca por `id`; `useMyOng` busca por `profile_id`
+    const requestedId = eqParam(new URL(request.url()), "id");
+
+    if (requestedId) {
+      await respondRows(
+        route,
+        ongProfile && ongProfile.id === requestedId ? [ongProfile] : [],
+      );
+      return;
+    }
+
     if (state.ongs.length) {
       await respondRows(route, [{ id: ONG_ID }]);
       return;
@@ -325,6 +398,41 @@ export async function setupSupabaseMocks(
       },
       body: "",
     });
+  });
+
+  await page.route("**/rest/v1/ong_followers*", async (route) => {
+    const request = route.request();
+    const method = request.method();
+    if (method === "OPTIONS") return preflight(route);
+
+    const url = new URL(request.url());
+
+    if (method === "POST") {
+      const body = request.postDataJSON() as {
+        donor_id: string;
+        ong_id: string;
+      };
+      state.follows.push(body);
+      await route.fulfill({ status: 201, headers: corsHeaders, body: "" });
+      return;
+    }
+
+    const matches = state.follows.filter(
+      (row) =>
+        row.ong_id === eqParam(url, "ong_id") &&
+        row.donor_id === eqParam(url, "donor_id"),
+    );
+
+    if (method === "DELETE") {
+      state.follows = state.follows.filter((row) => !matches.includes(row));
+      await route.fulfill({ status: 204, headers: corsHeaders, body: "" });
+      return;
+    }
+
+    await respondRows(
+      route,
+      matches.map((_, index) => ({ id: `follow-${index + 1}` })),
+    );
   });
 
   await page.route("**/rest/v1/needs*", async (route) => {
@@ -366,8 +474,20 @@ export async function setupSupabaseMocks(
 
     state.needRequests.push(request.url());
 
+    // o perfil da ONG pede as necessidades sem o embed da ONG; devolver o
+    // objeto mesmo assim faria o card mostrar dados que em produção não vêm
+    const wantsOng = (url.searchParams.get("select") ?? "").includes("ong:ongs");
+    const selected = wantsOng
+      ? rows
+      : rows.map((row) => {
+          const withoutOng: Partial<NeedRow> = { ...row };
+          delete withoutOng.ong;
+
+          return withoutOng;
+        });
+
     if ((request.headers()["accept"] ?? "").includes("vnd.pgrst.object+json")) {
-      await respondRows(route, rows);
+      await respondRows(route, selected);
       return;
     }
 
@@ -377,11 +497,11 @@ export async function setupSupabaseMocks(
       headers: {
         ...corsHeaders,
         "content-type": "application/json",
-        "content-range": rows.length
-          ? `0-${rows.length - 1}/${rows.length}`
+        "content-range": selected.length
+          ? `0-${selected.length - 1}/${selected.length}`
           : "*/0",
       },
-      body: JSON.stringify(rows),
+      body: JSON.stringify(selected),
     });
   });
 

@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { todayIso } from "@/lib/dates";
+import { errorCode } from "@/lib/postgrest";
 import type {
   NeedFilters,
   NeedStatus,
@@ -22,12 +23,6 @@ const NEED_WITH_CATEGORY_COLUMNS = `${NEED_COLUMNS}, category:categories(id, nam
 // `!inner` vira JOIN: sem ele, o filtro em `ong.city_id` só esvaziaria o
 // objeto `ong` e a necessidade continuaria na lista
 const NEED_WITH_ONG_COLUMNS = `${NEED_WITH_CATEGORY_COLUMNS}, ong:ongs!inner(id, trade_name, neighborhood, state_id, city_id, city:cities(name), state:states(uf))`;
-
-function errorCode(error: unknown): unknown {
-  return typeof error === "object" && error !== null && "code" in error
-    ? error.code
-    : undefined;
-}
 
 export function needErrorMessage(
   error: unknown,

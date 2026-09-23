@@ -1,0 +1,36 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  fetchIsFollowingOng,
+  followOng,
+  unfollowOng,
+} from "../services/ongFollowers";
+import { ongKeys } from "./queryKeys";
+
+/** Só faz sentido para doador: a policy de INSERT recusa os outros papéis. */
+export function useIsFollowingOng(
+  ongId: string,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: ongKeys.following(ongId),
+    queryFn: () => fetchIsFollowingOng(ongId),
+    enabled: enabled && !!ongId,
+  });
+}
+
+/**
+ * Recebe o estado atual e faz o contrário dele. O `return` do `onSuccess`
+ * segura a mutação pendente até o refetch acabar, então o botão não pisca o
+ * rótulo antigo.
+ */
+export function useToggleFollowOng(ongId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ["ongs", "follow", ongId],
+    mutationFn: (following: boolean) =>
+      following ? unfollowOng(ongId) : followOng(ongId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ongKeys.following(ongId) }),
+  });
+}

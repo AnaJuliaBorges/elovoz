@@ -1,3 +1,5 @@
+import { todayIso } from "@/lib/dates";
+
 export type Urgency = "low" | "medium" | "high";
 
 export type NeedStatus = "open" | "partially_fulfilled" | "fulfilled";
@@ -77,4 +79,18 @@ export function formatOngLocation(ong: NeedWithOng["ong"]): string {
     : null;
 
   return [ong.neighborhood, city].filter(Boolean).join(", ");
+}
+
+/**
+ * Mesma regra que `searchNeeds` aplica no banco: ainda dá para atender se
+ * não foi totalmente atendida e o prazo não passou. Usada no perfil da ONG,
+ * que carrega todas as necessidades dela de uma vez.
+ */
+export function isOpenForDonation(
+  need: Pick<Need, "status" | "deadline">,
+  today: string = todayIso(),
+): boolean {
+  if (need.status === "fulfilled") return false;
+
+  return !need.deadline || need.deadline >= today;
 }
