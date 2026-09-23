@@ -230,6 +230,31 @@ function filterNeeds(rows: NeedRow[], url: URL): NeedRow[] {
   );
 }
 
+export type InterestRow = {
+  id: string;
+  need_id: string;
+  donor_id: string;
+  message: string | null;
+  expected_quantity: number | null;
+  expected_deadline: string | null;
+  created_at: string;
+};
+
+export function interestRow(
+  overrides: Partial<InterestRow> = {},
+): InterestRow {
+  return {
+    id: "interest-1",
+    need_id: "need-1",
+    donor_id: USER_ID,
+    message: "Tenho 10 cestas, falo pelo (21) 99999-1234",
+    expected_quantity: 10,
+    expected_deadline: null,
+    created_at: nowIso,
+    ...overrides,
+  };
+}
+
 export type MockOptions = {
   /** login com credenciais erradas */
   loginFails?: boolean;
@@ -241,6 +266,8 @@ export type MockOptions = {
   needs?: NeedRow[];
   /** ONG que o perfil público (`/ongs/:id`) encontra */
   ongProfile?: OngProfileRow | null;
+  /** interesses que já existem no banco */
+  interests?: InterestRow[];
 };
 
 /** o que o banco fake gravou durante o teste */
@@ -255,6 +282,8 @@ export type MockState = {
   needRequests: string[];
   /** pares (donor_id, ong_id) seguidos, como o banco fake guardou */
   follows: { donor_id: string; ong_id: string }[];
+  /** interesses manifestados (RF06) */
+  interests: InterestRow[];
 };
 
 export async function setupSupabaseMocks(
@@ -265,6 +294,7 @@ export async function setupSupabaseMocks(
     ong = null,
     needs = [],
     ongProfile = null,
+    interests = [],
   }: MockOptions = {},
 ): Promise<MockState> {
   const state: MockState = {
@@ -275,6 +305,7 @@ export async function setupSupabaseMocks(
     insertedNeeds: [],
     needRequests: [],
     follows: [],
+    interests: [...interests],
   };
 
   await page.route("**/auth/v1/token*", async (route) => {
@@ -433,6 +464,53 @@ export async function setupSupabaseMocks(
       route,
       matches.map((_, index) => ({ id: `follow-${index + 1}` })),
     );
+  });
+
+  await page.route("**/rest/v1/interests*", async (route) => {
+    const request = route.request();
+    const method = request.method();
+    if (method === "OPTIONS") return preflight(route);
+
+    const url = new URL(request.url());
+
+    if (method === "POST") {
+      const body = request.postDataJSON() as Omit<
+        InterestRow,
+        "id" | "created_at"
+      >;
+      const row: InterestRow = {
+        ...body,
+        id: `interest-novo-${state.interests.length + 1}`,
+        created_at: nowIso,
+      };
+
+      state.interests.push(row);
+      await route.fulfill({ status: 201, headers: corsHeaders, body: "" });
+      return;
+    }
+
+    // a RLS é quem filtra de verdade; aqui basta honrar os filtros da query
+    const matches = state.interests.filter((row) => {
+      const need = eqParam(url, "need_id");
+      const donor = eqParam(url, "donor_id");
+      const id = eqParam(url, "id");
+
+      return (
+        (!need || row.need_id === need) &&
+        (!donor || row.donor_id === donor) &&
+        (!id || row.id === id)
+      );
+    });
+
+    if (method === "DELETE") {
+      state.interests = state.interests.filter(
+        (row) => !matches.includes(row),
+      );
+      await route.fulfill({ status: 204, headers: corsHeaders, body: "" });
+      return;
+    }
+
+    await respondRows(route, matches);
   });
 
   await page.route("**/rest/v1/needs*", async (route) => {

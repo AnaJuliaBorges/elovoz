@@ -11,6 +11,14 @@ vi.mock("../hooks/useNeedQueries");
 vi.mock("@/features/auth");
 vi.mock("@/features/ongs");
 
+// as seções de interesse têm teste próprio; aqui só importa quem as vê
+vi.mock("@/features/donations", () => ({
+  DonorInterestSection: ({ accepting }: { accepting: boolean }) => (
+    <p>interesse do doador (aceitando: {String(accepting)})</p>
+  ),
+  NeedInterestsList: () => <p>interesses recebidos</p>,
+}));
+
 const need: NeedWithOng = {
   id: "need-1",
   ong_id: "ong-1",
@@ -91,20 +99,35 @@ describe("NeedDetailPage", () => {
     expect(
       screen.queryByRole("link", { name: /Editar necessidade/ }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("interesse do doador (aceitando: true)"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("interesses recebidos")).not.toBeInTheDocument();
   });
 
-  it("mostra a edição só para a ONG dona", () => {
+  it("não convida a doar quando a necessidade já foi atendida", () => {
+    mockNeed({ data: { ...need, status: "fulfilled" } });
+    mockViewer("donor");
+    renderPage();
+
+    expect(
+      screen.getByText("interesse do doador (aceitando: false)"),
+    ).toBeInTheDocument();
+  });
+
+  it("mostra a edição e os interesses recebidos só para a ONG dona", () => {
     mockNeed();
     mockViewer("ong", "ong-1");
     renderPage();
 
     expect(useMyOng).toHaveBeenCalledWith({ enabled: true });
+    expect(screen.getByText("interesses recebidos")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /Editar necessidade/ }),
     ).toHaveAttribute("href", "/painel/necessidades/need-1/editar");
   });
 
-  it("não mostra a edição para outra ONG", () => {
+  it("não mostra a edição nem os interesses para outra ONG", () => {
     mockNeed();
     mockViewer("ong", "ong-2");
     renderPage();
@@ -112,6 +135,7 @@ describe("NeedDetailPage", () => {
     expect(
       screen.queryByRole("link", { name: /Editar necessidade/ }),
     ).not.toBeInTheDocument();
+    expect(screen.queryByText("interesses recebidos")).not.toBeInTheDocument();
   });
 
   it("explica quando falta quantidade e prazo", () => {

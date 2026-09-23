@@ -78,7 +78,13 @@ A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
 7. **ONG `pending` não publica.** A policy `needs_insert_approved_ong` recusa o
    INSERT com erro `42501`; o painel já esconde o botão, e `needErrorMessage`
    traduz o erro caso ele apareça.
-8. **Seguidores não são contáveis pelo client.** `ong_followers_select_own_or_admin`
+8. **A ONG lê o interesse, mas não quem o escreveu.**
+   `interests_select_involved` devolve a linha para a ONG dona da necessidade,
+   mas `profiles` continua visível só para o próprio dono — ou seja, dá para ler
+   a mensagem e a quantidade prevista, nunca o nome ou o telefone de quem
+   ofereceu. É por isso que o formulário de interesse exige mensagem e pede o
+   contato dentro dela.
+9. **Seguidores não são contáveis pelo client.** `ong_followers_select_own_or_admin`
    devolve só as linhas do próprio doador: dá para saber se *eu* sigo a ONG, nunca
    quantas pessoas seguem. E `ong_followers_insert_own` exige
    `current_user_type() = 'donor'` — por isso o botão de seguir nem aparece para

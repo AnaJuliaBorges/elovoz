@@ -1,3 +1,3 @@
 // API pública da feature `donations`.
-// Ainda vazia: interesse do doador numa necessidade e histórico de doações (RF06, RF10).
-export {};
+export { DonorInterestSection } from "./components/DonorInterestSection";
+export { NeedInterestsList } from "./components/NeedInterestsList";

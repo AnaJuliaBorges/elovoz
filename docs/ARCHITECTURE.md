@@ -36,11 +36,11 @@ splitting funcionar.
 | `/cadastrar` | AuthLayout | — | wizard doador/ONG ✅ |
 | `/recuperar-senha`, `/redefinir-senha` | AuthLayout | — | ✅ |
 | `/necessidades` | AppLayout | `protectedLoader` | busca com filtros ✅ (RF04) |
-| `/necessidades/:id` | AppLayout | `protectedLoader` | detalhe ✅ — falta o botão de interesse (RF06) |
+| `/necessidades/:id` | AppLayout | `protectedLoader` | detalhe + manifestar interesse ✅ (RF06) |
 | `/ongs/:id` | AppLayout | `protectedLoader` | perfil público + seguir ✅ (RF05, RF11) |
 | `/painel` | AppLayout | `ongLoader` | necessidades da ONG + status ✅ (RF03, RF07) |
 | `/painel/necessidades/nova`, `/painel/necessidades/:id/editar` | AppLayout | `ongLoader` | form de necessidade ✅ (RF03) |
-| `/minhas-doacoes` | AppLayout | `protectedLoader` | placeholder (RF10) |
+| `/minhas-doacoes` | AppLayout | `protectedLoader` | placeholder — histórico de interesses e ONGs seguidas |
 | `/notificacoes` | AppLayout | `protectedLoader` | placeholder (RF09) |
 | `/perfil` | AppLayout | `protectedLoader` | placeholder |
 | `/admin` | AppLayout | `adminLoader` | placeholder (RF08) |
@@ -148,11 +148,34 @@ service engole o `23505`.
 **Falta:** a ONG editar os próprios dados institucionais (nada no perfil leva a
 um formulário de edição ainda).
 
+### `donations` (implementada, menos o histórico)
+
+Interesse do doador numa necessidade (RF06), nos dois lados: quem se oferece e
+quem recebe. Tudo mora no detalhe da necessidade.
+
+| Arquivo | Papel |
+|---|---|
+| `components/DonorInterestSection.tsx` | o que o doador vê: botão "Tenho interesse", formulário e, depois, o que ele enviou (com cancelar) |
+| `components/InterestForm.tsx` | mensagem (obrigatória), quantidade e prazo previstos |
+| `components/NeedInterestsList.tsx` | o que a ONG dona vê: quem quer doar naquela necessidade |
+| `model/interest.ts`, `model/schema.ts` | tipo `Interest` e `interestSchema` |
+| `services/interests.ts` | `fetchMyInterest`, `fetchNeedInterests`, `createInterest`, `deleteInterest`, `interestErrorMessage` |
+| `hooks/useInterests.ts`, `hooks/useInterestMutations.ts` | TanStack Query; toda escrita invalida `["interests"]` |
+
+**Quem vê o quê:** o convite só aparece para doador (a policy de INSERT exige
+`current_user_type() = 'donor'`) e some quando a necessidade já foi atendida ou
+o prazo passou — mesma regra `isOpenForDonation` da busca. Quem já manifestou
+continua vendo e podendo cancelar o que enviou, mesmo com a necessidade fechada.
+A lista de interesses recebidos só aparece para a ONG dona; é a RLS que decide
+o que volta, o componente não filtra nada.
+
+**Falta:** `/minhas-doacoes`, o histórico do doador (interesses manifestados +
+ONGs seguidas).
+
 ### Próximas features (pastas criadas, sem implementação)
 
 | Feature | Escopo | Requisitos |
 |---|---|---|
-| `donations` | interesse do doador e histórico | RF06, RF10 |
 | `notifications` | avisos in-app das ONGs seguidas | RF09 |
 | `admin` | aprovação/recusa de ONGs | RF08 |
 | `profile` | dados da conta, preferências, exclusão (LGPD) | RNF03 |
@@ -169,6 +192,12 @@ um formulário de edição ainda).
   a assinatura caso um serviço de erro entre depois.
 - **Autorização 100% no banco (RLS)**, sem RPC: o cliente fala com as tabelas e
   as policies decidem. Ver `docs/SUPABASE.md`.
+- **A ONG não vê quem é o doador, só a mensagem dele.** A policy de SELECT de
+  `profiles` só devolve a própria linha, então nome e telefone de quem
+  manifestou interesse são invisíveis para a instituição. Por isso a mensagem é
+  obrigatória e o formulário pede o contato dentro dela. Para mostrar o nome de
+  verdade seria preciso decidir o que expor e abrir isso na policy — decisão de
+  privacidade, não só de código.
 - **O perfil da ONG não mostra contagem de seguidores.** A policy de SELECT de
   `ong_followers` devolve só as linhas do próprio doador, então um total seria
   sempre 0 ou 1. Para exibir isso um dia seria preciso uma view/RPC agregada.

@@ -5,9 +5,10 @@ import { BackButton } from "@/components/shared/BackButton";
 import { formatDate } from "@/lib/dates";
 import { useProfile } from "@/features/auth";
 import { useMyOng } from "@/features/ongs";
+import { DonorInterestSection, NeedInterestsList } from "@/features/donations";
 import { NeedStatusBadge, UrgencyBadge } from "../components/NeedBadges";
 import { useNeed } from "../hooks/useNeedQueries";
-import { formatOngLocation } from "../model/need";
+import { formatOngLocation, isOpenForDonation } from "../model/need";
 
 export default function NeedDetailPage() {
   const { id = "" } = useParams();
@@ -92,6 +93,11 @@ export default function NeedDetailPage() {
         </div>
       </dl>
 
+      <DonorInterestSection
+        needId={need.id}
+        accepting={isOpenForDonation(need)}
+      />
+
       <section
         aria-labelledby="quem-precisa"
         className="flex flex-col gap-3 rounded-lg border bg-surface p-4"
@@ -133,6 +139,8 @@ export default function NeedDetailPage() {
 
       {/* `from` leva de volta para cá depois de salvar, em vez de jogar quem
           veio do detalhe no painel da ONG */}
+      {isOwner && <NeedInterestsList needId={need.id} />}
+
       {isOwner && (
         <Button asChild>
           <Link
