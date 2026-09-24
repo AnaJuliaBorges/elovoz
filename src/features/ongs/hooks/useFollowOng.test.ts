@@ -2,11 +2,16 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 import {
+  fetchFollowedOngs,
   fetchIsFollowingOng,
   followOng,
   unfollowOng,
 } from "../services/ongFollowers";
-import { useIsFollowingOng, useToggleFollowOng } from "./useFollowOng";
+import {
+  useFollowedOngs,
+  useIsFollowingOng,
+  useToggleFollowOng,
+} from "./useFollowOng";
 
 vi.mock("../services/ongFollowers");
 
@@ -49,6 +54,22 @@ describe("useIsFollowingOng", () => {
   });
 });
 
+describe("useFollowedOngs", () => {
+  it("lista as ONGs seguidas", async () => {
+    vi.mocked(fetchFollowedOngs).mockResolvedValue([]);
+    const { result } = renderHook(() => useFollowedOngs(), { wrapper });
+
+    await waitFor(() => expect(result.current.data).toEqual([]));
+    expect(fetchFollowedOngs).toHaveBeenCalled();
+  });
+
+  it("não consulta quando desligado", () => {
+    renderHook(() => useFollowedOngs({ enabled: false }), { wrapper });
+
+    expect(fetchFollowedOngs).not.toHaveBeenCalled();
+  });
+});
+
 describe("useToggleFollowOng", () => {
   it("segue quando ainda não segue, e invalida o estado", async () => {
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");
@@ -62,6 +83,9 @@ describe("useToggleFollowOng", () => {
     expect(unfollowOng).not.toHaveBeenCalled();
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["ongs", "following", "ong-1"],
+    });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["ongs", "followed"],
     });
   });
 

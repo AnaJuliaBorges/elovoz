@@ -4,7 +4,13 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import Login from "@/features/auth/pages/LoginPage";
 import Home from "@/features/auth/pages/Home";
-import { adminLoader, ongLoader, protectedLoader, publicOnlyLoader } from "./routes/guards";
+import {
+  adminLoader,
+  donorLoader,
+  ongLoader,
+  protectedLoader,
+  publicOnlyLoader,
+} from "./routes/guards";
 import { AppLayout, AuthLayout } from "./components/layout/LayoutWrapper";
 import { RouteError } from "./components/layout/RouteError";
 import { Placeholder } from "./components/layout/Placeholder";
@@ -92,12 +98,9 @@ export const router = createBrowserRouter([
           // as features entram nas próximas etapas
           {
             path: "minhas-doacoes",
-            loader: protectedLoader,
-            element: (
-              <Placeholder
-                title="Minhas doações"
-                description="Histórico de interesses manifestados e instituições que você segue."
-              />
+            loader: donorLoader,
+            lazy: lazyPage(
+              () => import("./features/donations/pages/MyDonationsPage"),
             ),
           },
           {
@@ -113,12 +116,7 @@ export const router = createBrowserRouter([
           {
             path: "perfil",
             loader: protectedLoader,
-            element: (
-              <Placeholder
-                title="Perfil"
-                description="Seus dados, preferências e exclusão de conta (RNF03/LGPD)."
-              />
-            ),
+            lazy: lazyPage(() => import("./features/profile/pages/ProfilePage")),
           },
           {
             path: "admin",

@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { errorCode } from "@/lib/postgrest";
-import type { Interest } from "../model/interest";
+import type { Interest, MyInterest } from "../model/interest";
 import type { InterestFormInput } from "../model/schema";
 
 const INTEREST_COLUMNS =
@@ -46,6 +46,29 @@ export async function fetchMyInterest(
   if (error) throw error;
 
   return (data as Interest | null) ?? null;
+}
+
+/**
+ * Histórico de interesses do doador logado, do mais recente para o mais
+ * antigo. O filtro por `donor_id` é explícito porque a RLS deixa o admin ver
+ * os de todo mundo.
+ */
+export async function fetchMyInterests(): Promise<MyInterest[]> {
+  const userId = await currentUserId();
+
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("interests")
+    .select(
+      `${INTEREST_COLUMNS}, need:needs(id, title, status, ong:ongs(id, trade_name))`,
+    )
+    .eq("donor_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []) as unknown as MyInterest[];
 }
 
 /**

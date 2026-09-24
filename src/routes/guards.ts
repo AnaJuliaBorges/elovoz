@@ -57,3 +57,18 @@ export async function ongLoader() {
 
   return null;
 }
+
+/** Área do doador: histórico de interesses e ONGs seguidas. */
+export async function donorLoader() {
+  const profile = await fetchCurrentProfile();
+
+  if (!profile) {
+    return redirect("/login");
+  }
+
+  if (profile.user_type !== "donor") {
+    return redirect(homeFor(profile.user_type));
+  }
+
+  return null;
+}

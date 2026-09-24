@@ -1,7 +1,13 @@
 import { supabase } from "@/lib/supabase";
 import { fetchCurrentProfile } from "@/features/auth";
 import type { Profile, UserType } from "@/features/auth";
-import { adminLoader, ongLoader, protectedLoader, publicOnlyLoader } from "./guards";
+import {
+  adminLoader,
+  donorLoader,
+  ongLoader,
+  protectedLoader,
+  publicOnlyLoader,
+} from "./guards";
 
 vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { getSession: vi.fn() } },
@@ -116,6 +122,30 @@ describe("ongLoader", () => {
     fetchCurrentProfileMock.mockResolvedValue(null);
 
     const response = (await ongLoader()) as Response;
+
+    expect(response.headers.get("Location")).toBe("/login");
+  });
+});
+
+describe("donorLoader", () => {
+  it("devolve a ONG para o painel", async () => {
+    fetchCurrentProfileMock.mockResolvedValue(profileWith("ong"));
+
+    const response = (await donorLoader()) as Response;
+
+    expect(response.headers.get("Location")).toBe("/painel");
+  });
+
+  it("deixa o doador entrar", async () => {
+    fetchCurrentProfileMock.mockResolvedValue(profileWith("donor"));
+
+    await expect(donorLoader()).resolves.toBeNull();
+  });
+
+  it("manda pro login sem perfil", async () => {
+    fetchCurrentProfileMock.mockResolvedValue(null);
+
+    const response = (await donorLoader()) as Response;
 
     expect(response.headers.get("Location")).toBe("/login");
   });

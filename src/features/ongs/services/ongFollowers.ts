@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { errorCode } from "@/lib/postgrest";
+import type { FollowedOng } from "../model/ong";
 
 async function currentUserId(): Promise<string | null> {
   const {
@@ -38,6 +39,31 @@ export async function fetchIsFollowingOng(ongId: string): Promise<boolean> {
   if (error) throw error;
 
   return !!data;
+}
+
+/**
+ * ONGs que o doador logado segue, da mais recente para a mais antiga. Uma ONG
+ * que deixou de ser visível (ex.: recusada pelo admin) volta com o embed
+ * `null` e sai da lista.
+ */
+export async function fetchFollowedOngs(): Promise<FollowedOng[]> {
+  const userId = await currentUserId();
+
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("ong_followers")
+    .select(
+      "ong:ongs(id, trade_name, neighborhood, city:cities(name), state:states(uf))",
+    )
+    .eq("donor_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as unknown as { ong: FollowedOng | null }[];
+
+  return rows.flatMap((row) => (row.ong ? [row.ong] : []));
 }
 
 export async function followOng(ongId: string): Promise<void> {

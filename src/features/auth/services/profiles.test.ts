@@ -1,6 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import { createQueryBuilder } from "@/test/supabaseQueryBuilder";
-import { createProfile, fetchCurrentProfile, fetchProfile } from "./profiles";
+import {
+  createProfile,
+  fetchCurrentProfile,
+  fetchProfile,
+  updateProfile,
+} from "./profiles";
 
 vi.mock("@/lib/supabase", () => ({
   supabase: {
@@ -110,5 +115,44 @@ describe("fetchCurrentProfile", () => {
 
     await expect(fetchCurrentProfile()).resolves.toEqual(profile);
     expect(builder.eq).toHaveBeenCalledWith("id", "user-1");
+  });
+});
+
+describe("updateProfile", () => {
+  it("grava nome aparado e telefone só em dígitos", async () => {
+    const builder = createQueryBuilder({ data: { id: "user-1" } });
+    fromMock.mockReturnValue(builder as never);
+
+    await updateProfile("user-1", {
+      name: "  Ana Souza ",
+      phone: "(21) 99876-5432",
+    });
+
+    expect(fromMock).toHaveBeenCalledWith("profiles");
+    expect(builder.update).toHaveBeenCalledWith({
+      name: "Ana Souza",
+      phone: "21998765432",
+    });
+    expect(builder.eq).toHaveBeenCalledWith("id", "user-1");
+    expect(builder.single).toHaveBeenCalled();
+  });
+
+  it("manda null quando o telefone fica em branco", async () => {
+    const builder = createQueryBuilder({ data: { id: "user-1" } });
+    fromMock.mockReturnValue(builder as never);
+
+    await updateProfile("user-1", { name: "Ana", phone: "" });
+
+    expect(builder.update).toHaveBeenCalledWith({ name: "Ana", phone: null });
+  });
+
+  it("propaga o UPDATE barrado pela RLS", async () => {
+    fromMock.mockReturnValue(
+      createQueryBuilder({ error: { code: "PGRST116" } }) as never,
+    );
+
+    await expect(
+      updateProfile("user-1", { name: "Ana" }),
+    ).rejects.toEqual({ code: "PGRST116" });
   });
 });

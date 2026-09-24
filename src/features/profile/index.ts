@@ -1,3 +1,3 @@
 // API pública da feature `profile`.
-// Ainda vazia: dados da conta, preferências e exclusão de conta (RNF03/LGPD).
+// Ainda vazia: a única tela (`/perfil`) é importada direto pelo `main.tsx`.
 export {};

@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { createQueryBuilder } from "@/test/supabaseQueryBuilder";
 import {
+  fetchFollowedOngs,
   fetchIsFollowingOng,
   followErrorMessage,
   followOng,
@@ -29,6 +30,55 @@ function withoutSession() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe("fetchFollowedOngs", () => {
+  const ong = {
+    id: "ong-1",
+    trade_name: "Casa Esperança",
+    neighborhood: "Centro",
+    city: { name: "Rio de Janeiro" },
+    state: { uf: "RJ" },
+  };
+
+  it("lista as ONGs seguidas pelo doador logado", async () => {
+    withSession();
+    const builder = createQueryBuilder({ data: [{ ong }] });
+    fromMock.mockReturnValue(builder as never);
+
+    await expect(fetchFollowedOngs()).resolves.toEqual([ong]);
+
+    expect(fromMock).toHaveBeenCalledWith("ong_followers");
+    expect(builder.eq).toHaveBeenCalledWith("donor_id", "donor-1");
+    expect(builder.order).toHaveBeenCalledWith("created_at", {
+      ascending: false,
+    });
+  });
+
+  it("descarta a ONG que deixou de ser visível", async () => {
+    withSession();
+    fromMock.mockReturnValue(
+      createQueryBuilder({ data: [{ ong }, { ong: null }] }) as never,
+    );
+
+    await expect(fetchFollowedOngs()).resolves.toEqual([ong]);
+  });
+
+  it("devolve lista vazia sem sessão, sem consultar o banco", async () => {
+    withoutSession();
+
+    await expect(fetchFollowedOngs()).resolves.toEqual([]);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it("propaga erro do supabase", async () => {
+    withSession();
+    fromMock.mockReturnValue(
+      createQueryBuilder({ error: new Error("RLS") }) as never,
+    );
+
+    await expect(fetchFollowedOngs()).rejects.toThrow("RLS");
+  });
 });
 
 describe("fetchIsFollowingOng", () => {

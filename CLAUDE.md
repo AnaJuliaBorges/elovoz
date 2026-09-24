@@ -43,7 +43,7 @@ Route guards live in `src/routes/guards.ts` and are the only guarding mechanism 
 
 - `protectedLoader` — needs a session, else redirects to `/login`.
 - `publicOnlyLoader` — logged-in visitors go to the home of their role.
-- `ongLoader` / `adminLoader` — role-gated areas (`/painel`, `/admin`).
+- `donorLoader` / `ongLoader` / `adminLoader` — role-gated areas (`/minhas-doacoes`, `/painel`, `/admin`).
 
 Roles come from `profiles.user_type` (`donor` | `ong` | `admin`); the mapping role → landing route is `HOME_BY_USER_TYPE` in `src/features/auth/model/profile.ts` — change it there, not inline.
 
@@ -72,6 +72,8 @@ Supabase is the backend: Postgres tables + Auth. Unlike an RPC-first codebase, a
 1. **There is no trigger creating `profiles`.** The row is inserted by the client right after `signUp`, while authenticated (`profiles_insert_own` requires `id = auth.uid()`). Email confirmation must stay OFF in Auth, or there is no session and the insert is rejected.
 2. **ONG signup has a mandatory order:** `auth.signUp` → insert `profiles` (`user_type = 'ong'`) → insert `ongs` (with an explicit `verification_status: 'pending'`) → insert `ong_contacts`. `ongs_insert_own` calls `current_user_type()`, which reads `profiles`. `src/features/auth/services/signUp.ts` encodes this, is idempotent per step, and throws `SignUpError` carrying the `stage` that failed.
 3. **Only an admin approves an ONG** (`verification_status`) — enforced by a trigger, not by the client.
+
+The one exception to table-only access is account deletion: `delete_own_account()` is a `SECURITY DEFINER` RPC (called from `src/features/profile/services/account.ts`) because the client cannot delete its own `auth.users` row; `on delete cascade` removes everything else.
 
 Service modules group table access by aggregate (`services/profiles.ts`, `services/signUp.ts`, `services/passwordReset.ts`) — add a new call to the aggregate it belongs to, not a new one-function file. Each has a matching `*.test.ts` mocking `@/lib/supabase` (never the service itself) with the chainable builder helper in `src/test/supabaseQueryBuilder.ts`.
 

@@ -4,9 +4,9 @@ O schema e as policies já estão aplicados no projeto. O SQL correspondente est
 em `supabase/migrations/` (histórico do que rodou) e o que ainda precisa ser
 rodado à mão fica em `supabase/sql/`.
 
-> **Pendente agora:** `ong_opening_hours.sql` cria a tabela dos horários de
-> funcionamento e as policies dela — sem rodar esse script, o cadastro de ONG e
-> a tela `/painel/horarios` vão falhar. `seed_usuarios_teste.sql` cria contas de
+> **Pendente agora:** `delete_own_account.sql` cria a função que a tela
+> `/perfil` chama para excluir a conta — sem ela, o botão "Excluir minha conta"
+> só mostra erro. `seed_usuarios_teste.sql` cria contas de
 > teste (doadora, ONG aprovada, ONG pendente e admin, senha `elovoz123`); é
 > re-executável e pode ficar na pasta enquanto for útil.
 
@@ -55,6 +55,13 @@ etc.) em português, porque aparece para o usuário.
 | `ong_followers` | próprio doador ou admin | doador segue/deixa de seguir |
 | `notifications` | próprio doador ou admin | sem INSERT pelo client; doador só marca como lida |
 
+## Funções
+
+| Função | O que faz | Usada em |
+|---|---|---|
+| `current_user_type()` | papel de quem chama, lido de `profiles` | policies |
+| `delete_own_account()` | apaga o próprio usuário de `auth.users` (o cascade leva o resto); recusa admin | `/perfil` (`profile/services/account.ts`) |
+
 A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
 `profiles` sem disparar a RLS da própria `profiles` (evita recursão).
 
@@ -76,7 +83,10 @@ A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
    não olha o `user_type`: dava para se cadastrar como `admin` direto pelo
    client. Um trigger `before insert` fecha isso. Ele foi aplicado pelo SQL
    Editor e o script foi apagado, então **não está em `supabase/migrations/`**.
-   Se recriar o banco a partir das migrations, recrie esse trigger.
+   Se recriar o banco a partir das migrations, recrie esse trigger. O mesmo vale
+   para a tabela `ong_opening_hours` (e as policies dela) e para a função
+   `delete_own_account`: foram aplicadas pelo SQL Editor e não estão em
+   `supabase/migrations/`.
 5. **UPDATE/DELETE barrado pela RLS não dá erro.** Só afeta zero linhas. Os
    services de `needs` encadeiam `.select("id").single()` para que isso vire o
    erro `PGRST116` e a tela consiga avisar.

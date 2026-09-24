@@ -37,6 +37,15 @@ export interface OngProfile {
   opening_hours: OpeningHour[];
 }
 
+/** ONG que o doador segue, como a lista de "Minhas doações" mostra (RF11). */
+export interface FollowedOng {
+  id: string;
+  trade_name: string;
+  neighborhood: string;
+  city: { name: string } | null;
+  state: { uf: string } | null;
+}
+
 /** "Rio de Janeiro - RJ" */
 export function formatCityState(
   ong: Pick<OngProfile, "city" | "state">,

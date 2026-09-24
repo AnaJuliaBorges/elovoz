@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  fetchFollowedOngs,
   fetchIsFollowingOng,
   followOng,
   unfollowOng,
@@ -18,6 +19,15 @@ export function useIsFollowingOng(
   });
 }
 
+/** ONGs que o doador segue — a aba de "Minhas doações". */
+export function useFollowedOngs({ enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: ongKeys.followed,
+    queryFn: fetchFollowedOngs,
+    enabled,
+  });
+}
+
 /**
  * Recebe o estado atual e faz o contrário dele. O `return` do `onSuccess`
  * segura a mutação pendente até o refetch acabar, então o botão não pisca o
@@ -31,6 +41,9 @@ export function useToggleFollowOng(ongId: string) {
     mutationFn: (following: boolean) =>
       following ? unfollowOng(ongId) : followOng(ongId),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ongKeys.following(ongId) }),
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ongKeys.following(ongId) }),
+        queryClient.invalidateQueries({ queryKey: ongKeys.followed }),
+      ]),
   });
 }

@@ -48,19 +48,21 @@ Rodar um teste só: `npx vitest run src/lib/masks.test.ts` /
 
 ## Estado atual
 
-Esta é a base do projeto: infraestrutura, tema, shell de rotas e a feature de
-autenticação (login, cadastro de doador, cadastro de ONG em 3 passos,
-recuperação de senha). As telas de necessidades, ONGs, doações, notificações e
-admin existem como rotas com placeholder — cada uma tem sua pasta em
-`src/features/`, pronta para receber a implementação.
+Implementado: autenticação (login, cadastro de doador, cadastro de ONG em 4
+passos, recuperação de senha), busca e detalhe de necessidades com filtros,
+painel da ONG (necessidades e horários), perfil público da ONG com seguir,
+manifestar interesse, "Minhas doações" (histórico de interesses e ONGs
+seguidas) e perfil da conta (dados, privacidade e exclusão de conta).
+
+Ainda como placeholder: notificações em tempo real (RF09) e o painel do
+administrador (RF08).
 
 Detalhes de arquitetura em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) e do
 banco em [docs/SUPABASE.md](docs/SUPABASE.md).
 
-## Pendências de configuração
+## Configuração do Supabase
 
-- [ ] **Desligar a confirmação de e-mail** no Supabase (Authentication →
-      Sign In / Providers). O cadastro grava a linha em `profiles` logo depois
-      do `signUp`, e sem sessão ativa a RLS bloqueia esse INSERT.
-- [ ] **Rodar `supabase/sql/fix_user_type_on_insert.sql`** no SQL Editor: sem
-      ele, dá para se cadastrar como `admin` direto pelo client.
+A confirmação de e-mail precisa ficar **desligada** (Authentication → Sign In /
+Providers): o cadastro grava a linha em `profiles` logo depois do `signUp`, e
+sem sessão ativa a RLS bloqueia esse INSERT. Scripts em `supabase/sql/` ainda
+precisam ser rodados no SQL Editor (veja [docs/SUPABASE.md](docs/SUPABASE.md)).

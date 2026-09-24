@@ -4,6 +4,7 @@ import {
   createInterest,
   deleteInterest,
   fetchMyInterest,
+  fetchMyInterests,
   fetchNeedInterests,
   interestErrorMessage,
 } from "./interests";
@@ -83,6 +84,50 @@ describe("fetchMyInterest", () => {
     );
 
     await expect(fetchMyInterest("need-1")).rejects.toThrow("RLS");
+  });
+});
+
+describe("fetchMyInterests", () => {
+  it("lista os interesses do doador logado com a necessidade junto", async () => {
+    withSession();
+    const row = {
+      ...interest,
+      need: {
+        id: "need-1",
+        title: "Cestas básicas",
+        status: "open",
+        ong: { id: "ong-1", trade_name: "Casa Esperança" },
+      },
+    };
+    const builder = createQueryBuilder({ data: [row] });
+    fromMock.mockReturnValue(builder as never);
+
+    await expect(fetchMyInterests()).resolves.toEqual([row]);
+
+    expect(fromMock).toHaveBeenCalledWith("interests");
+    expect(builder.select).toHaveBeenCalledWith(
+      expect.stringContaining("need:needs("),
+    );
+    expect(builder.eq).toHaveBeenCalledWith("donor_id", "donor-1");
+    expect(builder.order).toHaveBeenCalledWith("created_at", {
+      ascending: false,
+    });
+  });
+
+  it("devolve lista vazia sem sessão, sem consultar o banco", async () => {
+    withoutSession();
+
+    await expect(fetchMyInterests()).resolves.toEqual([]);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it("propaga erro do supabase", async () => {
+    withSession();
+    fromMock.mockReturnValue(
+      createQueryBuilder({ error: new Error("RLS") }) as never,
+    );
+
+    await expect(fetchMyInterests()).rejects.toThrow("RLS");
   });
 });
 

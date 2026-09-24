@@ -36,6 +36,27 @@ export async function createProfile(input: {
   if (error) throw error;
 }
 
+/**
+ * Atualiza nome e telefone. O `.select().single()` transforma um UPDATE
+ * barrado pela RLS (zero linhas, sem erro) em `PGRST116`.
+ */
+export async function updateProfile(
+  id: string,
+  input: { name: string; phone?: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      name: input.name.trim(),
+      phone: input.phone ? onlyDigits(input.phone) : null,
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (error) throw error;
+}
+
 export async function fetchCurrentProfile(): Promise<Profile | null> {
   const {
     data: { session },

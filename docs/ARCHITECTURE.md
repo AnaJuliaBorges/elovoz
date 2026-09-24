@@ -10,7 +10,7 @@ src/
 ├── main.tsx                 # todas as rotas, em um lugar só (createBrowserRouter)
 ├── App.tsx                  # elemento raiz: scroll reset + <Outlet /> + Toaster
 ├── index.css                # tokens do tema (Tailwind v4, @theme)
-├── routes/guards.ts         # protectedLoader, publicOnlyLoader, ongLoader, adminLoader
+├── routes/guards.ts         # protectedLoader, publicOnlyLoader, donorLoader, ongLoader, adminLoader
 ├── lib/                     # supabase, queryClient, reportError, masks, dates, utils
 ├── hooks/
 │   ├── useLocations.ts      # estados e cidades (selects encadeados)
@@ -41,9 +41,9 @@ splitting funcionar.
 | `/painel` | AppLayout | `ongLoader` | necessidades da ONG + status ✅ (RF03, RF07) |
 | `/painel/necessidades/nova`, `/painel/necessidades/:id/editar` | AppLayout | `ongLoader` | form de necessidade ✅ (RF03) |
 | `/painel/horarios` | AppLayout | `ongLoader` | horários de funcionamento da ONG ✅ |
-| `/minhas-doacoes` | AppLayout | `protectedLoader` | placeholder — histórico de interesses e ONGs seguidas |
+| `/minhas-doacoes` | AppLayout | `donorLoader` | histórico de interesses + ONGs seguidas ✅ (RF06, RF11) |
 | `/notificacoes` | AppLayout | `protectedLoader` | placeholder (RF09) |
-| `/perfil` | AppLayout | `protectedLoader` | placeholder |
+| `/perfil` | AppLayout | `protectedLoader` | dados da conta, privacidade, exclusão de conta e sair ✅ (RNF03) |
 | `/admin` | AppLayout | `adminLoader` | placeholder (RF08) |
 
 O papel do usuário (`profiles.user_type`) decide para onde o login leva e o que
@@ -64,7 +64,7 @@ Login, cadastro e recuperação de senha.
 | `pages/ForgotPasswordPage.tsx`, `pages/ResetPasswordPage.tsx` | fluxo de senha |
 | `model/profile.ts` | `UserType`, `Profile`, `HOME_BY_USER_TYPE` |
 | `model/schema.ts` | schemas zod de todos os formulários |
-| `services/profiles.ts` | ler/criar a linha em `profiles` |
+| `services/profiles.ts` | ler/criar/atualizar a linha em `profiles` (`updateProfile` é usado pela feature `profile`) |
 | `services/signUp.ts` | cadastro de doador e de ONG, na ordem que a RLS exige |
 | `services/passwordReset.ts` | `resetPasswordForEmail` + `updateUser` |
 | `hooks/useProfile.ts` | perfil do usuário logado (TanStack Query) |
@@ -136,7 +136,8 @@ Perfil público da instituição e seguir/deixar de seguir (RF05, RF11), mais o
 | `components/OngContacts.tsx` | telefones (WhatsApp vai pro `wa.me`, fixo pro discador) e redes |
 | `model/ong.ts` | `MyOng`, `OngProfile`, `OngContact`, formatação de endereço e links das redes |
 | `services/ongs.ts` | `fetchMyOng` (por `profile_id`) e `fetchOngProfile` (por `id`, com embeds) |
-| `services/ongFollowers.ts` | `fetchIsFollowingOng`, `followOng`, `unfollowOng`, `followErrorMessage` |
+| `services/ongFollowers.ts` | `fetchIsFollowingOng`, `fetchFollowedOngs`, `followOng`, `unfollowOng`, `followErrorMessage` |
+| `components/FollowedOngsList.tsx` | ONGs que o doador segue, com "Deixar de seguir"; exportada para `/minhas-doacoes` |
 | `pages/OngHoursPage.tsx` | `/painel/horarios`: a ONG edita a própria semana |
 | `components/OpeningHoursFields.tsx` | os sete dias com "abre" + faixa de horário; controlado, porque serve o cadastro e o painel |
 | `components/OngOpeningHours.tsx` | a mesma semana agrupada para leitura no perfil |
@@ -154,7 +155,9 @@ que serve de prova de trabalho). Reaproveita `NeedCard`, `useOngNeeds` e
 doador — a policy de INSERT em `ong_followers` exige
 `current_user_type() = 'donor'`, então para ONG e admin ele só existiria para
 dar erro. Seguir duas vezes não é erro: o par (`donor_id`, `ong_id`) é único e o
-service engole o `23505`.
+service engole o `23505`. Seguir ou deixar de seguir invalida tanto o estado do
+botão (`["ongs", "following", id]`) quanto a lista de seguidas
+(`["ongs", "followed"]`).
 
 **Horários de funcionamento:** uma linha por dia da semana em
 `ong_opening_hours` (0 = domingo, igual ao `extract(dow)`), preenchida no último
@@ -167,18 +170,21 @@ mesma faixa viram "Seg a Sex" e dias salteados viram "Seg, Qua e Sex".
 **Falta:** a ONG editar o resto dos dados institucionais (nome, missão,
 endereço, contatos e redes) — hoje só os horários têm tela de edição.
 
-### `donations` (implementada, menos o histórico)
+### `donations` (implementada)
 
 Interesse do doador numa necessidade (RF06), nos dois lados: quem se oferece e
-quem recebe. Tudo mora no detalhe da necessidade.
+quem recebe, no detalhe da necessidade, mais o histórico do doador em
+`/minhas-doacoes`.
 
 | Arquivo | Papel |
 |---|---|
 | `components/DonorInterestSection.tsx` | o que o doador vê: botão "Tenho interesse", formulário e, depois, o que ele enviou (com cancelar) |
 | `components/InterestForm.tsx` | mensagem (obrigatória), quantidade e prazo previstos |
 | `components/NeedInterestsList.tsx` | o que a ONG dona vê: quem quer doar naquela necessidade |
-| `model/interest.ts`, `model/schema.ts` | tipo `Interest` e `interestSchema` |
-| `services/interests.ts` | `fetchMyInterest`, `fetchNeedInterests`, `createInterest`, `deleteInterest`, `interestErrorMessage` |
+| `pages/MyDonationsPage.tsx` | `/minhas-doacoes`: abas "Interesses" e "Instituições que sigo" (a segunda é o `FollowedOngsList` da feature `ongs`) |
+| `components/MyInterestsList.tsx` | histórico dos interesses, com a necessidade, o status dela e a ONG |
+| `model/interest.ts`, `model/schema.ts` | tipos `Interest` e `MyInterest` (com o embed da necessidade) e `interestSchema` |
+| `services/interests.ts` | `fetchMyInterest`, `fetchMyInterests`, `fetchNeedInterests`, `createInterest`, `deleteInterest`, `interestErrorMessage` |
 | `hooks/useInterests.ts`, `hooks/useInterestMutations.ts` | TanStack Query; toda escrita invalida `["interests"]` |
 
 **Quem vê o quê:** o convite só aparece para doador (a policy de INSERT exige
@@ -188,8 +194,35 @@ continua vendo e podendo cancelar o que enviou, mesmo com a necessidade fechada.
 A lista de interesses recebidos só aparece para a ONG dona; é a RLS que decide
 o que volta, o componente não filtra nada.
 
-**Falta:** `/minhas-doacoes`, o histórico do doador (interesses manifestados +
-ONGs seguidas).
+**Histórico:** o `donorLoader` barra ONG e admin na rota. Os dois services
+filtram por `donor_id` mesmo com a RLS, porque o admin enxerga as linhas de
+todo mundo. Uma necessidade cuja ONG deixou de ser visível (recusada) volta com
+o embed `null`: o interesse continua na lista como "Necessidade indisponível",
+e a ONG some da lista de seguidas. Cancelar um interesse fica no detalhe da
+necessidade, não na lista.
+
+### `profile` (implementada)
+
+`/perfil`, para os três papéis.
+
+| Arquivo | Papel |
+|---|---|
+| `pages/ProfilePage.tsx` | seções "Seus dados", "Sua instituição" (só ONG: atalhos para o perfil público e os horários), "Privacidade" e o botão "Sair da conta" |
+| `components/ProfileForm.tsx` | nome e telefone; o e-mail aparece só para leitura (vem da sessão, não de `profiles`) |
+| `components/DeleteAccountSection.tsx` | exclusão da conta com confirmação; o texto diz o que some para cada papel |
+| `model/schema.ts` | `profileSchema` |
+| `services/account.ts` | `fetchAccountEmail` e `deleteOwnAccount` (RPC `delete_own_account` + `signOut` local) |
+| `hooks/useAccount.ts` | `useAccountEmail`, `useUpdateProfile` (usa o `updateProfile` da `auth`) e `useDeleteAccount` (limpa o cache inteiro) |
+
+**Exclusão de conta (RNF03/LGPD):** o client só consegue apagar `profiles`, e o
+login em `auth.users` continuaria vivo. Por isso é a única RPC do app:
+`delete_own_account()` (`SECURITY DEFINER`) apaga o usuário de `auth.users`, e o
+`on delete cascade` leva perfil, ONG, necessidades, interesses, seguidas e
+notificações. Admin não se exclui por aqui (a função recusa, e a tela nem
+oferece).
+
+**Sair no celular:** o MenuBar mobile não tem "Sair" (só o desktop tem), então
+a saída mora no fim do perfil.
 
 ### Próximas features (pastas criadas, sem implementação)
 
@@ -197,7 +230,6 @@ ONGs seguidas).
 |---|---|---|
 | `notifications` | avisos in-app das ONGs seguidas | RF09 |
 | `admin` | aprovação/recusa de ONGs | RF08 |
-| `profile` | dados da conta, preferências, exclusão (LGPD) | RNF03 |
 
 ## Decisões
 

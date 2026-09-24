@@ -1,8 +1,16 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
-import { fetchMyInterest, fetchNeedInterests } from "../services/interests";
-import { useMyInterest, useNeedInterests } from "./useInterests";
+import {
+  fetchMyInterest,
+  fetchMyInterests,
+  fetchNeedInterests,
+} from "../services/interests";
+import {
+  useMyInterest,
+  useMyInterests,
+  useNeedInterests,
+} from "./useInterests";
 
 vi.mock("../services/interests");
 
@@ -50,5 +58,15 @@ describe("useNeedInterests", () => {
     renderHook(() => useNeedInterests(""), { wrapper });
 
     expect(fetchNeedInterests).not.toHaveBeenCalled();
+  });
+});
+
+describe("useMyInterests", () => {
+  it("lista o histórico do doador", async () => {
+    vi.mocked(fetchMyInterests).mockResolvedValue([]);
+    const { result } = renderHook(() => useMyInterests(), { wrapper });
+
+    await waitFor(() => expect(result.current.data).toEqual([]));
+    expect(fetchMyInterests).toHaveBeenCalled();
   });
 });
