@@ -23,9 +23,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "transparent",
+          // os tokens do Tailwind v4 têm o prefixo `--color-`: `var(--popover)`
+          // não existe e deixava o toast padrão transparente
+          "--normal-bg": "var(--color-popover)",
+          "--normal-text": "var(--color-popover-foreground)",
+          "--normal-border": "var(--color-border)",
           "--success-bg": "var(--color-success-light)",
           "--success-text": "var(--color-success)",
           "--success-border": "transparent",
