@@ -4,7 +4,7 @@ import type { Interest, MyInterest } from "../model/interest";
 import type { InterestFormInput } from "../model/schema";
 
 const INTEREST_COLUMNS =
-  "id, need_id, donor_id, message, expected_quantity, expected_deadline, created_at";
+  "id, need_id, donor_id, message, expected_quantity, expected_deadline, created_at, share_contact, contact_name, contact_email, contact_phone";
 
 async function currentUserId(): Promise<string | null> {
   const {
@@ -100,11 +100,14 @@ export async function createInterest(
   const { error } = await supabase.from("interests").insert({
     need_id: needId,
     donor_id: userId,
-    message: values.message,
+    // em branco vira `null`: a ONG vê "sem mensagem", não um texto vazio
+    message: values.message.trim() || null,
     expected_quantity: values.expected_quantity
       ? Number(values.expected_quantity)
       : null,
     expected_deadline: values.expected_deadline || null,
+    // só o "sim ou não": o contato é preenchido pelo trigger no banco
+    share_contact: values.share_contact,
   });
 
   if (error) throw error;

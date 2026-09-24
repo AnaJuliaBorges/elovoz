@@ -125,6 +125,12 @@ export function DonorInterestSection({
           <p className="text-sm whitespace-pre-line">{interest.message}</p>
         )}
 
+        <p className="text-sm text-muted-foreground">
+          {interest.share_contact
+            ? "Você compartilhou seu nome, e-mail e telefone com a instituição."
+            : "Seu contato não foi compartilhado com a instituição."}
+        </p>
+
         {details.length > 0 && (
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
             {details.map(({ icon: Icon, text }) => (

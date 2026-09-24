@@ -23,6 +23,10 @@ const interest: Interest = {
   expected_quantity: 10,
   expected_deadline: "2026-12-20",
   created_at: "2026-09-20T12:00:00Z",
+  share_contact: false,
+  contact_name: null,
+  contact_email: null,
+  contact_phone: null,
 };
 
 function setup({
@@ -92,7 +96,7 @@ describe("DonorInterestSection", () => {
     await user.click(screen.getByRole("button", { name: /Tenho interesse/ }));
 
     await user.type(
-      screen.getByLabelText("Mensagem para a instituição"),
+      screen.getByLabelText(/Mensagem para a instituição/),
       "Tenho 10 cestas, falo pelo (21) 99999-1234",
     );
     await user.type(screen.getByLabelText("Quantidade (opcional)"), "10");
@@ -102,22 +106,45 @@ describe("DonorInterestSection", () => {
       message: "Tenho 10 cestas, falo pelo (21) 99999-1234",
       expected_quantity: "10",
       expected_deadline: "",
+      share_contact: false,
     });
     expect(toast.success).toHaveBeenCalledWith(
       "Interesse enviado para a instituição",
     );
   });
 
-  it("não envia mensagem curta demais", async () => {
+  it("envia sem mensagem, para quem só vai levar a doação", async () => {
     const { create } = setup();
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: /Tenho interesse/ }));
-    await user.type(screen.getByLabelText("Mensagem para a instituição"), "oi");
     await user.click(screen.getByRole("button", { name: "Enviar interesse" }));
 
-    expect(await screen.findByText(/10 caracteres/)).toBeInTheDocument();
-    expect(create).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledWith({
+      message: "",
+      expected_quantity: "",
+      expected_deadline: "",
+      share_contact: false,
+    });
+  });
+
+  it("compartilha o contato só quando o doador marca", async () => {
+    const { create } = setup();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: /Tenho interesse/ }));
+
+    const share = screen.getByRole("checkbox", {
+      name: /Compartilhar meu nome, e-mail e telefone/,
+    });
+    expect(share).not.toBeChecked();
+
+    await user.click(share);
+    await user.click(screen.getByRole("button", { name: "Enviar interesse" }));
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ share_contact: true }),
+    );
   });
 
   it("mostra a recusa da RLS no formulário", async () => {
@@ -139,8 +166,19 @@ describe("DonorInterestSection", () => {
     expect(screen.getByText("Quantidade: 10")).toBeInTheDocument();
     expect(screen.getByText("Até 20/12/2026")).toBeInTheDocument();
     expect(
+      screen.getByText("Seu contato não foi compartilhado com a instituição."),
+    ).toBeInTheDocument();
+    expect(
       screen.queryByRole("button", { name: /Tenho interesse/ }),
     ).not.toBeInTheDocument();
+  });
+
+  it("lembra quando o contato foi compartilhado", () => {
+    setup({ mine: { ...interest, share_contact: true } });
+
+    expect(
+      screen.getByText(/Você compartilhou seu nome, e-mail e telefone/),
+    ).toBeInTheDocument();
   });
 
   it("cancela o interesse depois de confirmar", async () => {

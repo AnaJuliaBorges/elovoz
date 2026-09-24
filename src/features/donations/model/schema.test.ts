@@ -7,11 +7,18 @@ describe("interestSchema", () => {
     expect(interestSchema.safeParse(base).success).toBe(true);
   });
 
-  it("exige uma mensagem com conteúdo", () => {
-    const result = interestSchema.safeParse({ ...base, message: "oi" });
+  it("aceita enviar sem mensagem", () => {
+    expect(interestSchema.safeParse(emptyInterestForm).success).toBe(true);
+  });
+
+  it("recusa mensagem longa demais", () => {
+    const result = interestSchema.safeParse({
+      ...base,
+      message: "a".repeat(1001),
+    });
 
     expect(result.success).toBe(false);
-    expect(result.error?.issues[0].message).toMatch(/10 caracteres/);
+    expect(result.error?.issues[0].message).toMatch(/1000 caracteres/);
   });
 
   it("recusa quantidade que não é inteiro positivo", () => {

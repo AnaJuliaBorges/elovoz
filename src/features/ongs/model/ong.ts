@@ -1,4 +1,3 @@
-import { onlyDigits } from "@/lib/masks";
 import type { OpeningHour } from "./openingHours";
 
 export type VerificationStatus = "pending" | "approved" | "rejected";
@@ -111,16 +110,9 @@ export function googleMapsLink(
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
-const DDI = "55";
-
-/** Só o número é guardado; o link de WhatsApp precisa do DDI na frente. */
-export function whatsappLink(number: string): string {
-  return `https://wa.me/${DDI}${onlyDigits(number)}`;
-}
-
-export function phoneLink(number: string): string {
-  return `tel:+${DDI}${onlyDigits(number)}`;
-}
+// os links de telefone também servem o contato do doador (feature
+// `donations`), por isso moram em `src/lib`
+export { phoneLink, whatsappLink } from "@/lib/contactLinks";
 
 export interface OngSocialLink {
   key: "instagram" | "facebook" | "website";

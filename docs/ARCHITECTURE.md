@@ -214,7 +214,8 @@ quem recebe, no detalhe da necessidade, mais o histórico do doador em
 | Arquivo | Papel |
 |---|---|
 | `components/DonorInterestSection.tsx` | o que o doador vê: botão "Tenho interesse", formulário e, depois, o que ele enviou (com cancelar) |
-| `components/InterestForm.tsx` | mensagem (obrigatória), quantidade e prazo previstos |
+| `components/InterestForm.tsx` | mensagem, quantidade e prazo previstos, todos opcionais (quem só vai levar a doação envia sem escrever nada), e a caixa "Compartilhar meu nome, e-mail e telefone", desmarcada por padrão |
+| `components/DonorContact.tsx` | o contato que o doador autorizou, para a ONG: e-mail, telefone e WhatsApp (o link vem de `src/lib/contactLinks.ts`) |
 | `components/NeedInterestsList.tsx` | o que a ONG dona vê: quem quer doar naquela necessidade |
 | `pages/MyDonationsPage.tsx` | `/minhas-doacoes`: abas "Interesses" e "Instituições que sigo" (a segunda é o `FollowedOngsList` da feature `ongs`) |
 | `components/MyInterestsList.tsx` | histórico dos interesses, com a necessidade, o status dela e a ONG |

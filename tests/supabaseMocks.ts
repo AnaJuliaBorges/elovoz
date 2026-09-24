@@ -245,6 +245,10 @@ export type InterestRow = {
   expected_quantity: number | null;
   expected_deadline: string | null;
   created_at: string;
+  share_contact: boolean;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
 };
 
 export function interestRow(
@@ -258,6 +262,10 @@ export function interestRow(
     expected_quantity: 10,
     expected_deadline: null,
     created_at: nowIso,
+    share_contact: false,
+    contact_name: null,
+    contact_email: null,
+    contact_phone: null,
     ...overrides,
   };
 }

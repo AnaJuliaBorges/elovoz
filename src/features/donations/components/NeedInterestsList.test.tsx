@@ -14,6 +14,10 @@ const interest: Interest = {
   expected_quantity: 10,
   expected_deadline: "2026-12-20",
   created_at: "2026-09-20T12:00:00Z",
+  share_contact: false,
+  contact_name: null,
+  contact_email: null,
+  contact_phone: null,
 };
 
 function setup(overrides: Record<string, unknown> = {}) {
@@ -64,6 +68,55 @@ describe("NeedInterestsList", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Ninguém manifestou interesse ainda/),
+    ).toBeInTheDocument();
+  });
+
+  it("mostra o contato quando o doador autorizou", () => {
+    setup({
+      data: [
+        {
+          ...interest,
+          message: null,
+          share_contact: true,
+          contact_name: "Ana Souza",
+          contact_email: "ana@teste.com",
+          contact_phone: "21998765432",
+        },
+      ],
+    });
+
+    const contact = screen.getByRole("list", {
+      name: "Contato de quem quer doar",
+    });
+    expect(contact).toHaveTextContent("Ana Souza");
+    expect(screen.getByRole("link", { name: "ana@teste.com" })).toHaveAttribute(
+      "href",
+      "mailto:ana@teste.com",
+    );
+    expect(
+      screen.getByRole("link", { name: "(21) 99876-5432" }),
+    ).toHaveAttribute("href", "tel:+5521998765432");
+    expect(screen.getByRole("link", { name: "WhatsApp" })).toHaveAttribute(
+      "href",
+      "https://wa.me/5521998765432",
+    );
+    // com contato, não faz sentido dizer para levar no horário
+    expect(screen.queryByText(/Sem mensagem/)).not.toBeInTheDocument();
+  });
+
+  it("sem autorização, não mostra contato nenhum", () => {
+    setup();
+
+    expect(
+      screen.queryByRole("list", { name: "Contato de quem quer doar" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("explica o interesse que chegou sem mensagem", () => {
+    setup({ data: [{ ...interest, message: null }] });
+
+    expect(
+      screen.getByText(/a pessoa deve levar a doação no horário/),
     ).toBeInTheDocument();
   });
 

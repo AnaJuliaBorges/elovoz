@@ -33,6 +33,7 @@ const values = {
   message: "Tenho 10 cestas, falo pelo (21) 99999-1234",
   expected_quantity: "10",
   expected_deadline: "2026-12-20",
+  share_contact: true,
 };
 
 function withSession() {
@@ -173,22 +174,25 @@ describe("createInterest", () => {
       message: values.message,
       expected_quantity: 10,
       expected_deadline: "2026-12-20",
+      share_contact: true,
     });
   });
 
-  it("manda null quando quantidade e prazo ficam em branco", async () => {
+  it("manda null quando mensagem, quantidade e prazo ficam em branco", async () => {
     withSession();
     const builder = createQueryBuilder();
     fromMock.mockReturnValue(builder as never);
 
     await createInterest("need-1", {
-      message: values.message,
+      message: "   ",
       expected_quantity: "",
       expected_deadline: "",
+      share_contact: false,
     });
 
     expect(builder.insert).toHaveBeenCalledWith(
       expect.objectContaining({
+        message: null,
         expected_quantity: null,
         expected_deadline: null,
       }),

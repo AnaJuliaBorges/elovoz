@@ -4,7 +4,9 @@ O schema e as policies já estão aplicados no projeto. O SQL correspondente est
 em `supabase/migrations/` (histórico do que rodou) e o que ainda precisa ser
 rodado à mão fica em `supabase/sql/`.
 
-> **Pendente agora:** nada.
+> **Pendente agora:** `interest_contact.sql` cria as colunas de contato
+> compartilhado em `interests` e o trigger que as preenche — sem ele, enviar
+> interesse falha, porque o app já manda `share_contact`.
 > `seed_usuarios_teste.sql` cria contas de
 > teste (doadora, ONG aprovada, ONG pendente e admin, senha `elovoz123`); é
 > re-executável e pode ficar na pasta enquanto for útil.
@@ -33,7 +35,7 @@ etc.) em português, porque aparece para o usuário.
 | `ong_opening_hours` | `ong_id`, `weekday` (0-6, 0 = domingo), `opens_at`, `closes_at` | uma faixa por dia; único por (`ong_id`, `weekday`), com check de `closes_at > opens_at` |
 | `categories` | `id`, `name`, `icon` | seed com 10 categorias + "Outros" |
 | `needs` | `ong_id`, `category_id`, `title`, `description`, `quantity`, `urgency`, `deadline`, `status`, `created_at`, `updated_at` | `updated_at` mantido por trigger |
-| `interests` | `need_id`, `donor_id`, `message`, `expected_quantity`, `expected_deadline` | RF06 |
+| `interests` | `need_id`, `donor_id`, `message`, `expected_quantity`, `expected_deadline`, `share_contact`, `contact_name`, `contact_email`, `contact_phone` | RF06; o contato só é preenchido (pelo trigger) quando o doador autoriza |
 | `ong_followers` | `donor_id`, `ong_id` | único por par; alimenta o RF09 |
 | `notifications` | `donor_id`, `need_id`, `read` | **sem INSERT pelo client** — só server-side |
 
@@ -62,6 +64,7 @@ etc.) em português, porque aparece para o usuário.
 | `notify_followers_on_new_need()` | trigger AFTER INSERT em `needs`: um aviso em `notifications` para cada seguidor da ONG | RF09 |
 | `admin_list_users()` | todas as contas, de `auth.users` com `profiles` e a ONG: e-mail, último acesso e cadastros incompletos; vazio para quem não é admin | `/admin/usuarios` (`admin/services/users.ts`) |
 | `admin_delete_user(p_user_id)` | apaga a conta de outra pessoa em `auth.users` (o cascade leva o resto); só admin, e recusa a si mesmo e outros admins | `/admin/usuarios` |
+| `fill_interest_contact()` | trigger BEFORE INSERT/UPDATE em `interests`: com `share_contact`, copia nome, telefone (`profiles`) e e-mail (`auth.users`) do doador; sem, zera os três | RF06 |
 | `delete_own_account()` | apaga o próprio usuário de `auth.users` (o cascade leva o resto); recusa admin | `/perfil` (`profile/services/account.ts`) |
 
 A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
@@ -87,7 +90,8 @@ A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
    Editor e o script foi apagado, então **não está em `supabase/migrations/`**.
    Se recriar o banco a partir das migrations, recrie esse trigger. O mesmo vale
    para a tabela `ong_opening_hours` (e as policies dela) e para a função
-   `delete_own_account`, as funções `admin_list_users` e `admin_delete_user` e o trigger `notify_followers_on_new_need` (com o índice
+   `delete_own_account`, as funções `admin_list_users` e `admin_delete_user`, as
+   colunas de contato de `interests` com o trigger `fill_interest_contact` e o trigger `notify_followers_on_new_need` (com o índice
    e a publicação do Realtime): foram aplicados pelo SQL Editor e não estão em
    `supabase/migrations/`.
 5. **UPDATE/DELETE barrado pela RLS não dá erro.** Só afeta zero linhas. Os
@@ -103,8 +107,12 @@ A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
    `interests_select_involved` devolve a linha para a ONG dona da necessidade,
    mas `profiles` continua visível só para o próprio dono — ou seja, dá para ler
    a mensagem e a quantidade prevista, nunca o nome ou o telefone de quem
-   ofereceu. É por isso que o formulário de interesse exige mensagem e pede o
-   contato dentro dela.
+   ofereceu. Por isso o contato viaja no próprio interesse: se o doador marca
+   "Compartilhar meu contato", o trigger `fill_interest_contact` copia nome,
+   e-mail e telefone para a linha, que a ONG já pode ler. O client só manda o
+   `share_contact` e não consegue gravar um contato inventado. A mensagem é
+   opcional: quem só vai levar a doação no horário de funcionamento envia sem
+   escrever nada.
 9. **Seguidores não são contáveis pelo client.** `ong_followers_select_own_or_admin`
    devolve só as linhas do próprio doador: dá para saber se *eu* sigo a ONG, nunca
    quantas pessoas seguem. E `ong_followers_insert_own` exige

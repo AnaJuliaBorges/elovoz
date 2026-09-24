@@ -5,16 +5,12 @@ import { todayIso } from "@/lib/dates";
 const MAX_QUANTITY = 1_000_000;
 
 /**
- * A mensagem é obrigatória de propósito: a policy de `profiles` não deixa a
- * ONG ler nome nem telefone de quem manifestou interesse, então é por ela que
- * o contato chega.
+ * Tudo é opcional: quem só vai levar a doação no horário de funcionamento
+ * envia sem escrever nada. Para a ONG poder combinar a entrega, o doador marca
+ * `share_contact` e o banco anexa nome, e-mail e telefone do cadastro.
  */
 export const interestSchema = z.object({
-  message: z
-    .string()
-    .trim()
-    .min(10, "Conte em pelo menos 10 caracteres o que você pode doar")
-    .max(1000, "Use no máximo 1000 caracteres"),
+  message: z.string().trim().max(1000, "Use no máximo 1000 caracteres"),
   expected_quantity: z
     .string()
     .trim()
@@ -32,6 +28,7 @@ export const interestSchema = z.object({
       (value) => !value || value >= todayIso(),
       "A data não pode estar no passado",
     ),
+  share_contact: z.boolean(),
 });
 
 export type InterestFormInput = z.infer<typeof interestSchema>;
@@ -40,4 +37,6 @@ export const emptyInterestForm: InterestFormInput = {
   message: "",
   expected_quantity: "",
   expected_deadline: "",
+  // consentimento da LGPD: começa desmarcado, a pessoa escolhe marcar
+  share_contact: false,
 };

@@ -9,6 +9,15 @@ export interface Interest {
   expected_quantity: number | null;
   expected_deadline: string | null;
   created_at: string;
+  /**
+   * O doador autorizou a ONG a ver o contato dele neste interesse. Nome,
+   * e-mail e telefone são preenchidos pelo trigger `fill_interest_contact` a
+   * partir do cadastro, e ficam nulos quando não há autorização.
+   */
+  share_contact: boolean;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
 }
 
 /**

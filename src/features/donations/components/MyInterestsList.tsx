@@ -1,5 +1,11 @@
 import { Link } from "react-router-dom";
-import { Building2, CalendarClock, HandHeart, Package } from "lucide-react";
+import {
+  Building2,
+  CalendarClock,
+  HandHeart,
+  Package,
+  UserCheck,
+} from "lucide-react";
 import { Button, Skeleton } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { NeedStatusBadge } from "@/features/needs";
@@ -18,6 +24,9 @@ function InterestItem({ interest }: { interest: MyInterest }) {
           icon: CalendarClock,
           text: `Até ${formatDate(interest.expected_deadline)}`,
         }
+      : null,
+    interest.share_contact
+      ? { icon: UserCheck, text: "Contato compartilhado" }
       : null,
   ].filter((item) => item !== null);
 

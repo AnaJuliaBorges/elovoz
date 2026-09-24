@@ -15,6 +15,10 @@ const interest: MyInterest = {
   expected_quantity: 10,
   expected_deadline: "2026-12-20",
   created_at: "2026-09-20T12:00:00Z",
+  share_contact: false,
+  contact_name: null,
+  contact_email: null,
+  contact_phone: null,
   need: {
     id: "need-1",
     title: "Cestas básicas",
@@ -66,6 +70,12 @@ describe("MyInterestsList", () => {
     expect(screen.getByText("Quantidade: 10")).toBeInTheDocument();
     expect(screen.getByText("Até 20/12/2026")).toBeInTheDocument();
     expect(screen.getByText(/Tenho 10 cestas/)).toBeInTheDocument();
+  });
+
+  it("indica quando o contato foi compartilhado", () => {
+    setup({ data: [{ ...interest, share_contact: true }] });
+
+    expect(screen.getByText("Contato compartilhado")).toBeInTheDocument();
   });
 
   it("avisa quando a necessidade não está mais visível", () => {

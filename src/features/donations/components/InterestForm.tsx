@@ -1,9 +1,9 @@
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
+  Checkbox,
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -29,6 +29,7 @@ export function InterestForm({
   error: string | null;
 }) {
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
@@ -45,17 +46,15 @@ export function InterestForm({
     >
       <FieldGroup className="flex flex-col gap-4">
         <Field>
-          <FieldLabel htmlFor="message">Mensagem para a instituição</FieldLabel>
+          <FieldLabel htmlFor="message">
+            Mensagem para a instituição (opcional)
+          </FieldLabel>
           <Textarea
             id="message"
             className="h-28"
-            placeholder="O que você pode doar, em que estado está e como a instituição fala com você."
+            placeholder="Vai levar no horário de funcionamento? Pode enviar sem mensagem."
             {...register("message")}
           />
-          <FieldDescription>
-            A instituição lê esta mensagem — deixe aqui um telefone ou e-mail
-            para ela combinar a entrega com você.
-          </FieldDescription>
           {errors.message && <FieldError errors={[errors.message]} />}
         </Field>
 
@@ -92,6 +91,29 @@ export function InterestForm({
         </div>
       </FieldGroup>
 
+      <Controller
+        control={control}
+        name="share_contact"
+        render={({ field }) => (
+          <label className="flex items-start gap-2 text-sm">
+            <Checkbox
+              className="mt-0.5"
+              checked={field.value}
+              onCheckedChange={(checked) => field.onChange(checked === true)}
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="font-medium">
+                Compartilhar meu nome, e-mail e telefone com a instituição
+              </span>
+              <span className="text-muted-foreground">
+                Para ela combinar a entrega com você. Vale só para este
+                interesse e some se você cancelar.
+              </span>
+            </span>
+          </label>
+        )}
+      />
+
       {error && (
         <p
           role="alert"
@@ -101,16 +123,24 @@ export function InterestForm({
         </p>
       )}
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row">
+      {/* "Cancelar" sem borda: só fecha o formulário, não compete com enviar */}
+      <div className="flex items-center justify-end gap-2">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
+          size="sm"
+          className="text-sm"
           onClick={onCancel}
           disabled={submitting}
         >
           Cancelar
         </Button>
-        <Button type="submit" disabled={submitting}>
+        <Button
+          type="submit"
+          size="sm"
+          className="text-sm"
+          disabled={submitting}
+        >
           {submitting ? "Enviando..." : "Enviar interesse"}
         </Button>
       </div>

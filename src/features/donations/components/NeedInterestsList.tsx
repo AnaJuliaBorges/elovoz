@@ -2,11 +2,12 @@ import { CalendarClock, Package } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { useNeedInterests } from "../hooks/useInterests";
+import { DonorContact } from "./DonorContact";
 
 /**
  * Interesses que a ONG recebeu numa necessidade (RF06, lado de quem recebe).
- * Sem nome nem telefone de propósito: a policy de `profiles` não deixa a ONG
- * ler a linha de outra pessoa, então o contato vem na mensagem do doador.
+ * A policy de `profiles` não deixa a ONG ler o cadastro de ninguém: o contato
+ * só aparece quando o doador autorizou naquele interesse (`share_contact`).
  */
 export function NeedInterestsList({ needId }: { needId: string }) {
   const {
@@ -44,8 +45,8 @@ export function NeedInterestsList({ needId }: { needId: string }) {
 
       {received.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Ninguém manifestou interesse ainda. Quando alguém manifestar, a
-          mensagem aparece aqui com o contato que a pessoa deixar.
+          Ninguém manifestou interesse ainda. Quando alguém manifestar, aparece
+          aqui, com a mensagem e o contato se a pessoa autorizar.
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -58,9 +59,18 @@ export function NeedInterestsList({ needId }: { needId: string }) {
                 {formatDate(interest.created_at)}
               </p>
 
-              {interest.message && (
+              {interest.message ? (
                 <p className="whitespace-pre-line">{interest.message}</p>
+              ) : (
+                !interest.share_contact && (
+                  <p className="text-sm text-muted-foreground">
+                    Sem mensagem: a pessoa deve levar a doação no horário de
+                    funcionamento.
+                  </p>
+                )
               )}
+
+              {interest.share_contact && <DonorContact interest={interest} />}
 
               <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 {interest.expected_quantity !== null && (

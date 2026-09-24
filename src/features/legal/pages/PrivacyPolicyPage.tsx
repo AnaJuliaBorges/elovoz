@@ -68,7 +68,8 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             <strong className="font-medium">Do seu uso:</strong> os interesses
-            que você manifesta (mensagem, quantidade e prazo previstos), as
+            que você manifesta (mensagem, quantidade e prazo previstos e, se
+            você autorizar, seu contato para aquela instituição), as
             instituições que você segue e os avisos que já leu.
           </li>
         </ul>
@@ -86,7 +87,8 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             Levar sua mensagem de interesse até a instituição que precisa da
-            doação.
+            doação e, quando você autoriza, o seu contato, para ela combinar a
+            entrega.
           </li>
           <li>
             Avisar quando uma instituição que você segue publicar uma
@@ -99,17 +101,22 @@ export default function PrivacyPolicyPage() {
         </ul>
         <p>
           O tratamento é o necessário para prestar o serviço que você pediu ao
-          criar a conta (art. 7º, V, da LGPD).
+          criar a conta (art. 7º, V, da LGPD). Compartilhar seu contato com uma
+          instituição depende do seu consentimento, dado a cada interesse (art.
+          7º, I).
         </p>
       </Section>
 
       <Section title="Quem vê o quê">
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            <strong className="font-medium">Doador:</strong> seu nome, e-mail e
-            telefone não aparecem para as instituições. Elas veem só a mensagem,
-            a quantidade e o prazo que você escreve ao manifestar interesse. Por
-            isso, se quiser ser contatado, informe o contato na mensagem.
+            <strong className="font-medium">Doador:</strong> as instituições
+            veem a mensagem, a quantidade e o prazo que você informa ao
+            manifestar interesse. Seu nome, e-mail e telefone só aparecem para
+            a instituição daquele interesse, e só se você marcar
+            &quot;Compartilhar meu nome, e-mail e telefone&quot;. A caixa vem
+            desmarcada, vale só para aquele interesse e o contato é apagado se
+            você cancelar o interesse.
           </li>
           <li>
             <strong className="font-medium">Instituição:</strong> depois de
