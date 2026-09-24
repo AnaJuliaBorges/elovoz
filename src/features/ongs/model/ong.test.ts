@@ -1,6 +1,7 @@
 import {
   formatCityState,
   formatFullAddress,
+  googleMapsLink,
   ongSocialLinks,
   phoneLink,
   whatsappLink,
@@ -121,5 +122,25 @@ describe("ongSocialLinks", () => {
     expect(
       ongSocialLinks({ instagram: null, facebook: null, website: null }),
     ).toEqual([]);
+  });
+});
+
+describe("googleMapsLink", () => {
+  it("busca o endereço completo, com vírgulas e o país", () => {
+    const url = new URL(googleMapsLink(place));
+
+    expect(url.origin + url.pathname).toBe("https://www.google.com/maps/search/");
+    expect(url.searchParams.get("api")).toBe("1");
+    expect(url.searchParams.get("query")).toBe(
+      "Rua das Flores, 10, Centro, Rio de Janeiro - RJ, Brasil",
+    );
+  });
+
+  it("pula o que não foi informado", () => {
+    const url = new URL(
+      googleMapsLink({ ...place, neighborhood: "", city: null, state: null }),
+    );
+
+    expect(url.searchParams.get("query")).toBe("Rua das Flores, 10, Brasil");
   });
 });

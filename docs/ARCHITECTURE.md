@@ -136,6 +136,7 @@ Perfil público da instituição e seguir/deixar de seguir (RF05, RF11), mais o
 | `pages/OngProfilePage.tsx` | perfil: missão, contato, endereço e as necessidades da ONG |
 | `components/FollowOngButton.tsx` | toggle seguir/seguindo; só aparece para doador |
 | `components/OngContacts.tsx` | telefones (WhatsApp vai pro `wa.me`, fixo pro discador) e redes |
+| `components/OngAddress.tsx` | endereço com "Copiar" (Clipboard API, com aviso se o navegador negar) e "Google Maps" (busca por `googleMapsLink`, em outra aba) |
 | `model/ong.ts` | `MyOng`, `OngProfile`, `OngForReview`, `FollowedOng`, `OngContact`, formatação de endereço e links das redes |
 | `services/ongs.ts` | `fetchMyOng` (por `profile_id`), `fetchOngProfile` (por `id`, com embeds) e, para o admin, `fetchOngsForReview` e `setOngVerificationStatus` |
 | `services/ongFollowers.ts` | `fetchIsFollowingOng`, `fetchFollowedOngs`, `followOng`, `unfollowOng`, `followErrorMessage` |

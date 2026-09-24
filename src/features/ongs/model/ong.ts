@@ -91,6 +91,26 @@ export function formatFullAddress(
   return [ong.address, place].filter(Boolean).join(" — ");
 }
 
+/**
+ * Busca do Google Maps pelo endereço da ONG. Monta a consulta com vírgulas,
+ * sem o travessão de `formatFullAddress`, e termina em "Brasil" para o Maps
+ * não confundir com uma rua de mesmo nome em outro país.
+ */
+export function googleMapsLink(
+  ong: Pick<OngProfile, "address" | "neighborhood" | "city" | "state">,
+): string {
+  const query = [
+    ong.address,
+    ong.neighborhood,
+    formatCityState(ong),
+    "Brasil",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 const DDI = "55";
 
 /** Só o número é guardado; o link de WhatsApp precisa do DDI na frente. */

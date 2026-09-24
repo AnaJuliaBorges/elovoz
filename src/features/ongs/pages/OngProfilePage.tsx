@@ -11,12 +11,12 @@ import {
   type NeedWithCategory,
 } from "@/features/needs";
 import { FollowOngButton } from "../components/FollowOngButton";
+import { OngAddress } from "../components/OngAddress";
 import { OngContacts } from "../components/OngContacts";
 import { OngOpeningHours } from "../components/OngOpeningHours";
 import { useOngProfile } from "../hooks/useOngProfile";
 import {
   formatCityState,
-  formatFullAddress,
   type OngProfile,
 } from "../model/ong";
 
@@ -254,7 +254,7 @@ export default function OngProfilePage() {
       </Section>
 
       <Section title="Onde fica">
-        <p className="text-sm">{formatFullAddress(ong)}</p>
+        <OngAddress ong={ong} />
         <p className="text-sm text-muted-foreground">
           CNPJ {formatCnpj(ong.cnpj)}
         </p>

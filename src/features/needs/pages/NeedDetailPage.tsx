@@ -106,8 +106,8 @@ export default function NeedDetailPage() {
           Quem precisa
         </h2>
 
-        {/* sobra largura à direita do nome da ONG: no desktop o botão ocupa
-            ela, no celular vira CTA de largura cheia */}
+        {/* no desktop o botão vai para a direita do nome da ONG; no celular
+            desce para baixo dele, do tamanho do texto */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
           <div className="flex flex-col gap-1">
             <p className="flex items-center gap-2 font-medium">
@@ -125,8 +125,8 @@ export default function NeedDetailPage() {
 
           <Button
             variant="outline"
-            size="lg"
-            className="w-full sm:w-auto"
+            size="sm"
+            className="self-start text-sm sm:self-auto"
             asChild
           >
             <Link to={`/ongs/${need.ong.id}`}>
