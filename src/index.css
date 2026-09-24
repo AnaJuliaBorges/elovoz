@@ -64,6 +64,12 @@
     @apply bg-background text-foreground;
     font-size: var(--text-base);
   }
+  /* o Tailwind v4 deixa <button> com o cursor padrão; links já mostram a
+     mãozinha, então sem isto botões e links ao lado se comportavam diferente */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 /* mobile-first: todos os tamanhos de texto saem de um multiplicador só, que

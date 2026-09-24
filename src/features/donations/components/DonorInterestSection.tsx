@@ -15,7 +15,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
-import { useProfile } from "@/features/auth";
+import { AuthRequiredDialog, useProfile } from "@/features/auth";
 import { useMyInterest } from "../hooks/useInterests";
 import {
   useCreateInterest,
@@ -26,8 +26,10 @@ import type { InterestFormInput } from "../model/schema";
 import { InterestForm } from "./InterestForm";
 
 /**
- * Manifestar interesse numa necessidade (RF06). Só aparece para doador: a
- * policy de INSERT em `interests` exige `current_user_type() = 'donor'`.
+ * Manifestar interesse numa necessidade (RF06). Só funciona para doador: a
+ * policy de INSERT em `interests` exige `current_user_type() = 'donor'`. O
+ * visitante sem conta vê o mesmo botão, que abre o convite para se cadastrar;
+ * ONG e admin não veem nada.
  *
  * `accepting` desliga o convite quando a necessidade já foi atendida ou o
  * prazo passou — quem já manifestou continua vendo o que enviou.
@@ -43,12 +45,29 @@ export function DonorInterestSection({
 
   const { data: profile } = useProfile();
   const isDonor = profile?.user_type === "donor";
+  // `null` é sem sessão; `undefined` ainda está carregando
+  const isVisitor = profile === null;
 
   const { data: interest, isLoading } = useMyInterest(needId, {
     enabled: isDonor,
   });
   const createInterest = useCreateInterest(needId);
   const deleteInterest = useDeleteInterest();
+
+  if (isVisitor && accepting) {
+    return (
+      <AuthRequiredDialog
+        title="Crie sua conta para doar"
+        description="Com uma conta de doador, você avisa a instituição do que pode doar e combina a entrega com ela."
+        trigger={
+          <Button size="lg" className="self-start">
+            <HandHeart aria-hidden="true" />
+            Tenho interesse
+          </Button>
+        }
+      />
+    );
+  }
 
   if (!isDonor) return null;
 

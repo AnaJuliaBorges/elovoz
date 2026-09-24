@@ -10,9 +10,9 @@ import MenuBar from "./MenuBar";
 vi.mock("@/features/auth");
 vi.mock("@/features/notifications");
 
-function setup(userType: UserType, unread = 0) {
+function setup(userType: UserType | null, unread = 0, path = "/") {
   vi.mocked(useProfile).mockReturnValue({
-    data: { id: "user-1", user_type: userType },
+    data: userType === null ? null : { id: "user-1", user_type: userType },
   } as never);
   vi.mocked(useLogout).mockReturnValue(vi.fn());
   vi.mocked(useUnreadNotificationsCount).mockReturnValue({
@@ -20,7 +20,7 @@ function setup(userType: UserType, unread = 0) {
   } as never);
 
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <MenuBar />
     </MemoryRouter>,
   );
@@ -60,5 +60,26 @@ describe("MenuBar", () => {
     });
     expect(useNotificationsRealtime).toHaveBeenCalledWith(undefined);
     expect(screen.queryByText("Avisos")).not.toBeInTheDocument();
+  });
+
+  it("acende só o item de caminho mais específico", () => {
+    setup("admin", 0, "/admin/usuarios");
+
+    // o primeiro rótulo é o do menu mobile, onde a cor fica no próprio texto
+    const [users] = screen.getAllByText("Usuários");
+    const [ongs] = screen.getAllByText("ONGs");
+    expect(users).toHaveClass("text-primary");
+    expect(ongs).not.toHaveClass("text-primary");
+  });
+
+  it("visitante vê Buscar, Entrar e Criar conta, sem Sair", () => {
+    setup(null);
+
+    expect(screen.getAllByText("Buscar")).toHaveLength(2);
+    expect(screen.getAllByText("Entrar")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Criar conta" })).toBeInTheDocument();
+    expect(screen.queryByText("Sair")).not.toBeInTheDocument();
+    expect(screen.queryByText("Avisos")).not.toBeInTheDocument();
+    expect(useNotificationsRealtime).toHaveBeenCalledWith(undefined);
   });
 });

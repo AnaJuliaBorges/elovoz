@@ -65,14 +65,15 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
+          // busca, detalhe e perfil da ONG são abertos: o visitante navega sem
+          // conta, e só "Tenho interesse" / "Seguir" pedem cadastro. A RLS de
+          // SELECT dessas tabelas já é `to public` (só ONG aprovada aparece)
           {
             path: "necessidades",
-            loader: protectedLoader,
             lazy: lazyPage(() => import("./features/needs/pages/SearchNeedsPage")),
           },
           {
             path: "necessidades/:id",
-            loader: protectedLoader,
             lazy: lazyPage(() => import("./features/needs/pages/NeedDetailPage")),
           },
           {
@@ -102,7 +103,6 @@ export const router = createBrowserRouter([
           },
           {
             path: "ongs/:id",
-            loader: protectedLoader,
             lazy: lazyPage(() => import("./features/ongs/pages/OngProfilePage")),
           },
           // as telas abaixo ainda são placeholders: o shell logado já navega,
@@ -130,6 +130,11 @@ export const router = createBrowserRouter([
             path: "admin",
             loader: adminLoader,
             lazy: lazyPage(() => import("./features/admin/pages/AdminOngsPage")),
+          },
+          {
+            path: "admin/usuarios",
+            loader: adminLoader,
+            lazy: lazyPage(() => import("./features/admin/pages/AdminUsersPage")),
           },
         ],
       },

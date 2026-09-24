@@ -41,8 +41,10 @@ export default function Home() {
         </p>
 
         <div className="flex w-full max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
+          {/* navegar não pede conta: o cadastro só aparece quando a pessoa
+              quer manifestar interesse ou seguir uma instituição */}
           <Button asChild size="lg">
-            <Link to="/cadastrar">Começar agora</Link>
+            <Link to="/necessidades">Ver necessidades</Link>
           </Button>
 
           <Button asChild size="lg" variant="outline">

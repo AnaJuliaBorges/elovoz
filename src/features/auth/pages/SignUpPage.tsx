@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { BackButton } from "@/components/shared/BackButton";
 import { emptyOpeningHoursForm } from "@/features/ongs";
 import { useSignUpWizardStore } from "../signUp/store/useSignUpWizardStore";
@@ -13,6 +13,7 @@ import { OngDataStep } from "../signUp/steps/OngDataStep";
 import { OngContactStep } from "../signUp/steps/OngContactStep";
 import { OngHoursStep } from "../signUp/steps/OngHoursStep";
 import { PendingReview } from "../signUp/steps/PendingReview";
+import { REDIRECT_PARAM, safeRedirect, withRedirect } from "../model/redirect";
 import icone from "@/assets/icone.png";
 
 const ONG_STEP_TITLES = [
@@ -23,6 +24,8 @@ const ONG_STEP_TITLES = [
 ];
 
 export default function SignUpPage() {
+  const [searchParams] = useSearchParams();
+  const returnTo = safeRedirect(searchParams.get(REDIRECT_PARAM));
   const {
     data,
     submitting,
@@ -32,7 +35,7 @@ export default function SignUpPage() {
     submitOngData,
     submitOngContact,
     submitOngHours,
-  } = useSignUpWizard();
+  } = useSignUpWizard(returnTo);
   const update = useSignUpWizardStore((state) => state.update);
 
   const isOng = data.account.user_type === "ong";
@@ -115,7 +118,10 @@ export default function SignUpPage() {
       {step === 1 && (
         <p className="text-center text-sm text-muted-foreground">
           Já tem conta?{" "}
-          <Link to="/login" className="text-primary underline">
+          <Link
+            to={returnTo ? withRedirect("/login", returnTo) : "/login"}
+            className="text-primary underline"
+          >
             Entrar
           </Link>
         </p>

@@ -4,9 +4,7 @@ O schema e as policies já estão aplicados no projeto. O SQL correspondente est
 em `supabase/migrations/` (histórico do que rodou) e o que ainda precisa ser
 rodado à mão fica em `supabase/sql/`.
 
-> **Pendente agora:** `need_notifications.sql` cria o trigger que grava os
-> avisos de nova necessidade e adiciona `notifications` à publicação do
-> Realtime — sem ele, `/notificacoes` fica sempre vazia.
+> **Pendente agora:** nada.
 > `seed_usuarios_teste.sql` cria contas de
 > teste (doadora, ONG aprovada, ONG pendente e admin, senha `elovoz123`); é
 > re-executável e pode ficar na pasta enquanto for útil.
@@ -62,6 +60,8 @@ etc.) em português, porque aparece para o usuário.
 |---|---|---|
 | `current_user_type()` | papel de quem chama, lido de `profiles` | policies |
 | `notify_followers_on_new_need()` | trigger AFTER INSERT em `needs`: um aviso em `notifications` para cada seguidor da ONG | RF09 |
+| `admin_list_users()` | todas as contas, de `auth.users` com `profiles` e a ONG: e-mail, último acesso e cadastros incompletos; vazio para quem não é admin | `/admin/usuarios` (`admin/services/users.ts`) |
+| `admin_delete_user(p_user_id)` | apaga a conta de outra pessoa em `auth.users` (o cascade leva o resto); só admin, e recusa a si mesmo e outros admins | `/admin/usuarios` |
 | `delete_own_account()` | apaga o próprio usuário de `auth.users` (o cascade leva o resto); recusa admin | `/perfil` (`profile/services/account.ts`) |
 
 A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
@@ -87,7 +87,7 @@ A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
    Editor e o script foi apagado, então **não está em `supabase/migrations/`**.
    Se recriar o banco a partir das migrations, recrie esse trigger. O mesmo vale
    para a tabela `ong_opening_hours` (e as policies dela) e para a função
-   `delete_own_account` e o trigger `notify_followers_on_new_need` (com o índice
+   `delete_own_account`, as funções `admin_list_users` e `admin_delete_user` e o trigger `notify_followers_on_new_need` (com o índice
    e a publicação do Realtime): foram aplicados pelo SQL Editor e não estão em
    `supabase/migrations/`.
 5. **UPDATE/DELETE barrado pela RLS não dá erro.** Só afeta zero linhas. Os

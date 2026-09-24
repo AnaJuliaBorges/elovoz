@@ -42,6 +42,7 @@ All routes are declared in one place, `src/main.tsx`, via `createBrowserRouter`,
 Route guards live in `src/routes/guards.ts` and are the only guarding mechanism (no wrapper component):
 
 - `protectedLoader` — needs a session, else redirects to `/login`.
+- no loader — `/necessidades`, `/necessidades/:id` and `/ongs/:id` are public on purpose: visitors browse without an account, and donor actions ("Tenho interesse", "Seguir") open `AuthRequiredDialog`, which sends them to signup/login with a `?voltar=` return path (validated by `safeRedirect`).
 - `publicOnlyLoader` — logged-in visitors go to the home of their role.
 - `donorLoader` / `ongLoader` / `adminLoader` — role-gated areas (`/minhas-doacoes`, `/painel`, `/admin`).
 
@@ -73,7 +74,7 @@ Supabase is the backend: Postgres tables + Auth. Unlike an RPC-first codebase, a
 2. **ONG signup has a mandatory order:** `auth.signUp` → insert `profiles` (`user_type = 'ong'`) → insert `ongs` (with an explicit `verification_status: 'pending'`) → insert `ong_contacts`. `ongs_insert_own` calls `current_user_type()`, which reads `profiles`. `src/features/auth/services/signUp.ts` encodes this, is idempotent per step, and throws `SignUpError` carrying the `stage` that failed.
 3. **Only an admin approves an ONG** (`verification_status`) — enforced by a trigger, not by the client.
 
-The one exception to table-only access is account deletion: `delete_own_account()` is a `SECURITY DEFINER` RPC (called from `src/features/profile/services/account.ts`) because the client cannot delete its own `auth.users` row; `on delete cascade` removes everything else.
+The exceptions to table-only access are the RPCs that must touch `auth.users`, which the client cannot read or delete: `delete_own_account()` (`src/features/profile/services/account.ts`) and the admin-only `admin_list_users()` / `admin_delete_user()` (`src/features/admin/services/users.ts`, for e-mail, last sign-in and real deletion). All are `SECURITY DEFINER` with the role check inside; `on delete cascade` removes everything else.
 
 Service modules group table access by aggregate (`services/profiles.ts`, `services/signUp.ts`, `services/passwordReset.ts`) — add a new call to the aggregate it belongs to, not a new one-function file. Each has a matching `*.test.ts` mocking `@/lib/supabase` (never the service itself) with the chainable builder helper in `src/test/supabaseQueryBuilder.ts`.
 

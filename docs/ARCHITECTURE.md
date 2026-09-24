@@ -36,9 +36,9 @@ splitting funcionar.
 | `/cadastrar` | AuthLayout | — | wizard doador/ONG ✅ |
 | `/recuperar-senha`, `/redefinir-senha` | AuthLayout | — | ✅ |
 | `/privacidade` | AuthLayout | — (pública para todos) | política de privacidade ✅ (RNF03) |
-| `/necessidades` | AppLayout | `protectedLoader` | busca com filtros ✅ (RF04) |
-| `/necessidades/:id` | AppLayout | `protectedLoader` | detalhe + manifestar interesse ✅ (RF06) |
-| `/ongs/:id` | AppLayout | `protectedLoader` | perfil público + seguir ✅ (RF05, RF11) |
+| `/necessidades` | AppLayout | — (pública) | busca com filtros ✅ (RF04) |
+| `/necessidades/:id` | AppLayout | — (pública) | detalhe + manifestar interesse ✅ (RF06) |
+| `/ongs/:id` | AppLayout | — (pública) | perfil público + seguir ✅ (RF05, RF11) |
 | `/painel` | AppLayout | `ongLoader` | necessidades da ONG + status ✅ (RF03, RF07) |
 | `/painel/necessidades/nova`, `/painel/necessidades/:id/editar` | AppLayout | `ongLoader` | form de necessidade ✅ (RF03) |
 | `/painel/horarios` | AppLayout | `ongLoader` | horários de funcionamento da ONG ✅ |
@@ -47,6 +47,17 @@ splitting funcionar.
 | `/notificacoes` | AppLayout | `donorLoader` | avisos de novas necessidades das ONGs seguidas ✅ (RF09) |
 | `/perfil` | AppLayout | `protectedLoader` | dados da conta, privacidade, exclusão de conta e sair ✅ (RNF03) |
 | `/admin` | AppLayout | `adminLoader` | verificação de ONGs: aprovar, recusar, revogar ✅ (RF08) |
+| `/admin/usuarios` | AppLayout | `adminLoader` | gestão de usuários: listar, buscar, filtrar e excluir contas ✅ |
+
+**Navegar não pede conta.** Busca, detalhe da necessidade e perfil da ONG são
+públicos (a RLS de SELECT dessas tabelas já é `to public`, e só ONG aprovada
+aparece). O visitante tem menu próprio (Buscar, Entrar e, no desktop, "Criar
+conta"); "Tenho interesse" e "Seguir" aparecem para ele, mas abrem o
+`AuthRequiredDialog`, que leva ao cadastro ou ao login com `?voltar=` — depois
+de criar a conta ou entrar, a pessoa volta para a mesma tela. O `?voltar=` só
+aceita caminho interno (`safeRedirect`), para o link de login não servir de
+open redirect. `useProfile()` distingue os casos: `null` é visitante,
+`undefined` ainda está carregando.
 
 O papel do usuário (`profiles.user_type`) decide para onde o login leva e o que
 o MenuBar mostra. O mapa está em `src/features/auth/model/profile.ts`
@@ -70,7 +81,9 @@ Login, cadastro e recuperação de senha.
 | `services/signUp.ts` | cadastro de doador e de ONG, na ordem que a RLS exige |
 | `services/passwordReset.ts` | `resetPasswordForEmail` + `updateUser` |
 | `hooks/useProfile.ts` | perfil do usuário logado (TanStack Query) |
-| `hooks/useLogin.ts`, `hooks/useLogout.ts` | entrar e sair |
+| `hooks/useLogin.ts`, `hooks/useLogout.ts` | entrar e sair; login e cadastro de doador respeitam o `?voltar=` |
+| `components/AuthRequiredDialog.tsx` | convite "Criar conta" / "Já tenho conta" para o visitante, exportado para `donations` e `ongs` |
+| `model/redirect.ts` | `REDIRECT_PARAM` (`voltar`), `withRedirect` e `safeRedirect` |
 | `signUp/store/useSignUpWizardStore.ts` | estado do wizard (Zustand + persist) |
 | `signUp/hooks/useSignUpWizard.ts` | passo a passo, submits e erros |
 | `signUp/steps/*` | `AccountStep`, `OngDataStep`, `OngContactStep`, `OngHoursStep`, `PendingReview` |
@@ -253,8 +266,10 @@ a saída mora no fim do perfil.
 
 ### `admin` (implementada)
 
-`/admin`: verificação das ONGs (RF08). Os services ficam no agregado
-`ongs/services/ongs.ts` e chegam pelo barrel de `ongs`; aqui mora só a tela.
+Duas áreas, cada uma com item no menu do admin: "ONGs" (`/admin`,
+verificação, RF08) e "Usuários" (`/admin/usuarios`). Os services da
+verificação ficam no agregado `ongs/services/ongs.ts` e chegam pelo barrel de
+`ongs`; os de usuários moram aqui, porque só o admin usa.
 
 | Arquivo | Papel |
 |---|---|
@@ -278,7 +293,25 @@ preenchido para o admin, porque `profiles` é legível só pelo dono ou pelo
 admin. O e-mail não aparece: ele mora em `auth.users`, fora do alcance do
 client.
 
-**Falta:** a "gestão de usuários" que a especificação cita junto do painel.
+**Gestão de usuários:**
+
+| Arquivo | Papel |
+|---|---|
+| `pages/AdminUsersPage.tsx` | busca (nome, e-mail ou ONG, sem ligar para acento) e filtro por papel, com contagens |
+| `components/UserCard.tsx` | nome, papel, e-mail, telefone, cadastro, último acesso, ONG com status; excluir com confirmação |
+| `model/user.ts` | `AdminUser`, `filterUsers`, `countByFilter` e `canDeleteUser` |
+| `services/users.ts` | `fetchAdminUsers` (RPC `admin_list_users`) e `deleteUser` (RPC `admin_delete_user`) |
+| `hooks/useAdminUsers.ts` | `useAdminUsers` e `useDeleteUser` (invalida `["admin"]`, `["ongs"]` e `["needs"]`) |
+
+São RPCs porque o e-mail e o último acesso moram em `auth.users`, que o client
+não lê, e porque excluir de verdade é apagar o login, como no
+`delete_own_account`. A lista parte de `auth.users`, então mostra também os
+**cadastros incompletos** (login criado, perfil nunca gravado), que antes
+ficavam invisíveis. Admin não exclui a si mesmo (isso é pelo Perfil) nem outro
+admin: a tela esconde o botão e a função recusa com `42501`.
+
+**Menu:** com `/admin` e `/admin/usuarios`, o item ativo passou a ser o de
+caminho mais específico; antes, `/admin/usuarios` acenderia os dois.
 
 ### `legal` (implementada)
 

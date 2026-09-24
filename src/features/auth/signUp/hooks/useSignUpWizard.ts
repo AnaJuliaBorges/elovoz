@@ -39,7 +39,12 @@ function messageFor(error: unknown): string {
   return getErrorMessage(error) ?? "Algo deu errado. Tente novamente.";
 }
 
-export function useSignUpWizard() {
+/**
+ * `returnTo` é o `?voltar=` já validado: o doador que veio de "Tenho
+ * interesse" ou "Seguir" volta para aquela tela. A ONG ignora, porque cai no
+ * aviso de cadastro em análise.
+ */
+export function useSignUpWizard(returnTo: string | null = null) {
   const data = useSignUpWizardStore((state) => state.data);
   const update = useSignUpWizardStore((state) => state.update);
   const nextStep = useSignUpWizardStore((state) => state.nextStep);
@@ -72,7 +77,7 @@ export function useSignUpWizard() {
       update("userId", userId);
       await queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
       reset();
-      navigate(homeFor("donor"), { replace: true });
+      navigate(returnTo ?? homeFor("donor"), { replace: true });
     } catch (err) {
       setError(messageFor(err));
     } finally {

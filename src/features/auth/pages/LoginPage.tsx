@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Button,
   Field,
@@ -11,11 +11,14 @@ import {
 } from "@/components/ui";
 import { loginSchema, type LoginFormInput } from "../model/schema";
 import { useLogin } from "../hooks/useLogin";
+import { REDIRECT_PARAM, safeRedirect, withRedirect } from "../model/redirect";
 import logo from "@/assets/logo.png";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login, loading, error } = useLogin();
+  const [searchParams] = useSearchParams();
+  const returnTo = safeRedirect(searchParams.get(REDIRECT_PARAM));
 
   const {
     register,
@@ -29,7 +32,7 @@ export default function LoginPage() {
   async function onSubmit(values: LoginFormInput) {
     try {
       const home = await login(values);
-      navigate(home, { replace: true });
+      navigate(returnTo ?? home, { replace: true });
     } catch {
       // a mensagem já vem tratada em `error`
     }
@@ -85,7 +88,10 @@ export default function LoginPage() {
 
         <p className="text-muted-foreground">
           Ainda não tem conta?{" "}
-          <Link to="/cadastrar" className="text-primary underline">
+          <Link
+            to={returnTo ? withRedirect("/cadastrar", returnTo) : "/cadastrar"}
+            className="text-primary underline"
+          >
             Cadastre-se
           </Link>
         </p>

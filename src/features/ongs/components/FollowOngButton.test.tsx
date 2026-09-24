@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
-import { useProfile } from "@/features/auth";
+import { AuthRequiredDialog, useProfile } from "@/features/auth";
 import { useIsFollowingOng, useToggleFollowOng } from "../hooks/useFollowOng";
 import { FollowOngButton } from "./FollowOngButton";
 
@@ -15,13 +15,13 @@ type MutateOptions = {
 };
 
 function setup({
-  userType = "donor" as "donor" | "ong" | "admin",
+  userType = "donor" as "donor" | "ong" | "admin" | null,
   isFollowing = false,
   isLoading = false,
   isPending = false,
 } = {}) {
   vi.mocked(useProfile).mockReturnValue({
-    data: { user_type: userType },
+    data: userType === null ? null : { user_type: userType },
   } as never);
   vi.mocked(useIsFollowingOng).mockReturnValue({
     data: isFollowing,
@@ -38,7 +38,20 @@ function setup({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAuthDialog();
 });
+
+// o diálogo de cadastro tem teste próprio: aqui só importa que o botão abre
+// o convite com o título certo
+function mockAuthDialog() {
+  vi.mocked(AuthRequiredDialog).mockImplementation(({ trigger, title }) => (
+    <div>
+      {trigger}
+      <p>convite: {title}</p>
+    </div>
+  ));
+}
+
 
 describe("FollowOngButton", () => {
   it("segue a ONG e avisa o doador", async () => {
@@ -103,5 +116,14 @@ describe("FollowOngButton", () => {
     setup({ isPending: true });
 
     expect(screen.getByRole("button")).toBeDisabled();
+  });
+
+  it("para o visitante, o Seguir convida a criar conta", () => {
+    setup({ userType: null });
+
+    expect(screen.getByRole("button", { name: "Seguir" })).toBeInTheDocument();
+    expect(
+      screen.getByText("convite: Crie sua conta para seguir"),
+    ).toBeInTheDocument();
   });
 });

@@ -2,10 +2,12 @@ import {
   Bell,
   HandHeart,
   LayoutDashboard,
+  LogIn,
   LogOut,
   Search,
   ShieldCheck,
   User,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -39,6 +41,12 @@ const PERFIL: MenuItem = {
   link: "/perfil",
 };
 
+/** Sem conta: navegar pelas necessidades e entrar. */
+const VISITOR_MENU: MenuItem[] = [
+  BUSCAR,
+  { id: "entrar", icon: LogIn, label: "Entrar", link: "/login" },
+];
+
 const MENU_BY_USER_TYPE: Record<UserType, MenuItem[]> = {
   donor: [
     BUSCAR,
@@ -70,8 +78,14 @@ const MENU_BY_USER_TYPE: Record<UserType, MenuItem[]> = {
     {
       id: "admin",
       icon: ShieldCheck,
-      label: "Admin",
+      label: "ONGs",
       link: "/admin",
+    },
+    {
+      id: "usuarios",
+      icon: Users,
+      label: "Usuários",
+      link: "/admin/usuarios",
     },
     BUSCAR,
     PERFIL,
@@ -96,7 +110,11 @@ export default function MenuBar() {
   const logout = useLogout();
 
   const { data: profile } = useProfile();
-  const menuItems = MENU_BY_USER_TYPE[profile?.user_type ?? "donor"];
+  // `null` é visitante sem sessão; enquanto carrega, mantém o menu de doador
+  const isVisitor = profile === null;
+  const menuItems = isVisitor
+    ? VISITOR_MENU
+    : MENU_BY_USER_TYPE[profile?.user_type ?? "donor"];
 
   // avisos (RF09) são só do doador: contador no menu e escuta do Realtime
   const isDonor = profile?.user_type === "donor";
@@ -106,10 +124,17 @@ export default function MenuBar() {
   useNotificationsRealtime(isDonor ? profile.id : undefined);
   const badgeFor = (item: MenuItem) =>
     item.id === "notificacoes" && isDonor ? unread : 0;
-  const home = menuItems[0].link;
+  const home = isVisitor ? "/" : menuItems[0].link;
 
-  const isActive = (link: string) =>
+  // o item ativo é o de caminho mais específico: em `/admin/usuarios`, acende
+  // "Usuários" e não o "ONGs" de `/admin`
+  const matches = (link: string) =>
     location.pathname === link || location.pathname.startsWith(`${link}/`);
+  const activeLink = menuItems
+    .map((item) => item.link)
+    .filter(matches)
+    .sort((a, b) => b.length - a.length)[0];
+  const isActive = (link: string) => link === activeLink;
 
   return (
     <nav
@@ -188,14 +213,20 @@ export default function MenuBar() {
             );
           })}
 
-          <Button
-            variant="ghost"
-            className="text-muted-foreground"
-            onClick={logout}
-          >
-            <LogOut className="size-5" />
-            <span>Sair</span>
-          </Button>
+          {isVisitor ? (
+            <Button size="sm" className="text-sm" onClick={() => navigate("/cadastrar")}>
+              Criar conta
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              className="text-muted-foreground"
+              onClick={logout}
+            >
+              <LogOut className="size-5" />
+              <span>Sair</span>
+            </Button>
+          )}
         </div>
       </div>
     </nav>

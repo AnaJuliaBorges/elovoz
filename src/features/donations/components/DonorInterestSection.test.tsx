@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
-import { useProfile } from "@/features/auth";
+import { AuthRequiredDialog, useProfile } from "@/features/auth";
 import { useMyInterest } from "../hooks/useInterests";
 import {
   useCreateInterest,
@@ -26,14 +26,14 @@ const interest: Interest = {
 };
 
 function setup({
-  userType = "donor" as "donor" | "ong" | "admin",
+  userType = "donor" as "donor" | "ong" | "admin" | null,
   mine = null as Interest | null,
   isLoading = false,
   accepting = true,
   createFails = false,
 } = {}) {
   vi.mocked(useProfile).mockReturnValue({
-    data: { user_type: userType },
+    data: userType === null ? null : { user_type: userType },
   } as never);
   vi.mocked(useMyInterest).mockReturnValue({
     data: mine,
@@ -69,7 +69,20 @@ beforeAll(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAuthDialog();
 });
+
+// o diálogo de cadastro tem teste próprio: aqui só importa que o botão abre
+// o convite com o título certo
+function mockAuthDialog() {
+  vi.mocked(AuthRequiredDialog).mockImplementation(({ trigger, title }) => (
+    <div>
+      {trigger}
+      <p>convite: {title}</p>
+    </div>
+  ));
+}
+
 
 describe("DonorInterestSection", () => {
   it("manifesta interesse com mensagem, quantidade e prazo", async () => {
@@ -167,5 +180,22 @@ describe("DonorInterestSection", () => {
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(useMyInterest).toHaveBeenCalledWith("need-1", { enabled: false });
+  });
+
+  it("para o visitante, o Tenho interesse convida a criar conta", () => {
+    setup({ userType: null });
+
+    expect(
+      screen.getByRole("button", { name: "Tenho interesse" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("convite: Crie sua conta para doar"),
+    ).toBeInTheDocument();
+  });
+
+  it("não convida o visitante quando a necessidade não aceita mais", () => {
+    setup({ userType: null, accepting: false });
+
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 });
