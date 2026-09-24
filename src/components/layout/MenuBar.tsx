@@ -12,6 +12,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { useProfile, useLogout, type UserType } from "@/features/auth";
+import {
+  useNotificationsRealtime,
+  useUnreadNotificationsCount,
+} from "@/features/notifications";
 import icone from "@/assets/icone.png";
 
 type MenuItem = {
@@ -74,6 +78,18 @@ const MENU_BY_USER_TYPE: Record<UserType, MenuItem[]> = {
   ],
 };
 
+/** Bolinha com a contagem de avisos não lidos, presa no canto do ícone. */
+function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+
+  return (
+    <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.625rem] leading-none font-medium text-white">
+      {count > 9 ? "9+" : count}
+      <span className="sr-only"> não lidos</span>
+    </span>
+  );
+}
+
 export default function MenuBar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,6 +97,15 @@ export default function MenuBar() {
 
   const { data: profile } = useProfile();
   const menuItems = MENU_BY_USER_TYPE[profile?.user_type ?? "donor"];
+
+  // avisos (RF09) são só do doador: contador no menu e escuta do Realtime
+  const isDonor = profile?.user_type === "donor";
+  const { data: unread = 0 } = useUnreadNotificationsCount({
+    enabled: isDonor,
+  });
+  useNotificationsRealtime(isDonor ? profile.id : undefined);
+  const badgeFor = (item: MenuItem) =>
+    item.id === "notificacoes" && isDonor ? unread : 0;
   const home = menuItems[0].link;
 
   const isActive = (link: string) =>
@@ -116,12 +141,15 @@ export default function MenuBar() {
                 onClick={() => navigate(item.link)}
                 className="flex h-auto flex-col gap-1 py-2"
               >
-                <Icon
-                  className={cn(
-                    "size-6",
-                    active ? "text-primary" : "text-muted-foreground",
-                  )}
-                />
+                <span className="relative">
+                  <Icon
+                    className={cn(
+                      "size-6",
+                      active ? "text-primary" : "text-muted-foreground",
+                    )}
+                  />
+                  <UnreadBadge count={badgeFor(item)} />
+                </span>
                 <span
                   className={cn(
                     "text-xs",
@@ -151,7 +179,10 @@ export default function MenuBar() {
                   active && "text-primary",
                 )}
               >
-                <Icon className="size-5" />
+                <span className="relative">
+                  <Icon className="size-5" />
+                  <UnreadBadge count={badgeFor(item)} />
+                </span>
                 <span>{item.label}</span>
               </Button>
             );

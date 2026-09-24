@@ -16,7 +16,7 @@ src/
 │   ├── useLocations.ts      # estados e cidades (selects encadeados)
 │   └── useDebouncedValue.ts # atraso para campos de texto livre (filtro de bairro)
 ├── components/
-│   ├── layout/              # LayoutWrapper, MenuBar, RouteError, Placeholder
+│   ├── layout/              # LayoutWrapper, MenuBar, RouteError
 │   ├── shared/              # BackButton, LocationFields
 │   └── ui/                  # primitivos shadcn (+ barrel index.tsx)
 └── features/<feature>/      # pages, components, hooks, services, model, store, steps
@@ -42,7 +42,7 @@ splitting funcionar.
 | `/painel/necessidades/nova`, `/painel/necessidades/:id/editar` | AppLayout | `ongLoader` | form de necessidade ✅ (RF03) |
 | `/painel/horarios` | AppLayout | `ongLoader` | horários de funcionamento da ONG ✅ |
 | `/minhas-doacoes` | AppLayout | `donorLoader` | histórico de interesses + ONGs seguidas ✅ (RF06, RF11) |
-| `/notificacoes` | AppLayout | `protectedLoader` | placeholder (RF09) |
+| `/notificacoes` | AppLayout | `donorLoader` | avisos de novas necessidades das ONGs seguidas ✅ (RF09) |
 | `/perfil` | AppLayout | `protectedLoader` | dados da conta, privacidade, exclusão de conta e sair ✅ (RNF03) |
 | `/admin` | AppLayout | `adminLoader` | verificação de ONGs: aprovar, recusar, revogar ✅ (RF08) |
 
@@ -253,17 +253,34 @@ client.
 
 **Falta:** a "gestão de usuários" que a especificação cita junto do painel.
 
-### Próximas features (pastas criadas, sem implementação)
+### `notifications` (implementada)
 
-| Feature | Escopo | Requisitos |
-|---|---|---|
-| `notifications` | avisos in-app das ONGs seguidas | RF09 |
+Avisos de nova necessidade das ONGs que o doador segue (RF09).
+
+| Arquivo | Papel |
+|---|---|
+| `pages/NotificationsPage.tsx` | `/notificacoes`: lista com os não lidos destacados, abrir marca como lido, "Marcar todos como lidos" |
+| `model/notification.ts` | `AppNotification`, com o embed da necessidade e da ONG |
+| `services/notifications.ts` | `fetchNotifications` (os 50 mais novos), `markNotificationRead`, `markAllNotificationsRead`, `subscribeToNewNotifications` (Realtime) |
+| `hooks/useNotifications.ts` | `useNotifications`, `useUnreadNotificationsCount`, as duas mutações e `useNotificationsRealtime`; os dois primeiros e o Realtime saem pelo barrel para o MenuBar |
+
+**Quem grava o aviso é o banco.** O trigger `notify_followers_on_new_need`
+(em `needs`, AFTER INSERT) insere uma linha em `notifications` para cada
+seguidor da ONG, então o aviso existe mesmo com o doador offline. O client não
+tem policy de INSERT na tabela: só lê e marca como lido.
+
+**O Realtime só acorda o app.** O MenuBar do doador assina INSERT em
+`notifications` filtrado pelo próprio `donor_id`; cada evento invalida
+`["notifications"]` e mostra um toast com "Ver". O contador do menu é um
+`select` sobre a mesma consulta da tela, sem ida extra ao banco.
 
 ## Decisões
 
-- **Notificações via Supabase Realtime**, não polling: é o conceito central do
-  produto (RF09). Subscription em `needs` (INSERT) filtrada pelas ONGs que o
-  doador segue em `ong_followers`.
+- **Notificações: trigger grava, Realtime avisa** (RF09). A especificação
+  sugeria o client escutar `needs` e gravar em `notifications`, mas aí o aviso
+  só existiria para quem estivesse com o app aberto, e a tabela nem aceita
+  INSERT do client. O trigger grava para todos os seguidores; o Realtime em
+  `notifications` só atualiza o app aberto, sem polling.
 - **Sem PWA e sem web push nesta versão.** O layout continua mobile-first
   (RNF01) — isso é Tailwind, não PWA. Adicionar depois é plugin + manifest +
   ícones, sem retrabalho no resto.

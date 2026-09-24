@@ -1,3 +1,6 @@
 // API pública da feature `notifications`.
-// Ainda vazia: avisos in-app das ONGs seguidas, via Supabase Realtime (RF09).
-export {};
+// O MenuBar mostra o contador de não lidos e mantém a escuta do Realtime.
+export {
+  useNotificationsRealtime,
+  useUnreadNotificationsCount,
+} from "./hooks/useNotifications";

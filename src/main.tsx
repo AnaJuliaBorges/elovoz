@@ -13,7 +13,6 @@ import {
 } from "./routes/guards";
 import { AppLayout, AuthLayout } from "./components/layout/LayoutWrapper";
 import { RouteError } from "./components/layout/RouteError";
-import { Placeholder } from "./components/layout/Placeholder";
 import { createAppQueryClient } from "./lib/queryClient";
 import App from "./App";
 
@@ -105,12 +104,9 @@ export const router = createBrowserRouter([
           },
           {
             path: "notificacoes",
-            loader: protectedLoader,
-            element: (
-              <Placeholder
-                title="Notificações"
-                description="Avisos das ONGs que você segue, via Supabase Realtime (RF09)."
-              />
+            loader: donorLoader,
+            lazy: lazyPage(
+              () => import("./features/notifications/pages/NotificationsPage"),
             ),
           },
           {

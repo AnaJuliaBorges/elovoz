@@ -4,9 +4,10 @@ O schema e as policies já estão aplicados no projeto. O SQL correspondente est
 em `supabase/migrations/` (histórico do que rodou) e o que ainda precisa ser
 rodado à mão fica em `supabase/sql/`.
 
-> **Pendente agora:** `delete_own_account.sql` cria a função que a tela
-> `/perfil` chama para excluir a conta — sem ela, o botão "Excluir minha conta"
-> só mostra erro. `seed_usuarios_teste.sql` cria contas de
+> **Pendente agora:** `need_notifications.sql` cria o trigger que grava os
+> avisos de nova necessidade e adiciona `notifications` à publicação do
+> Realtime — sem ele, `/notificacoes` fica sempre vazia.
+> `seed_usuarios_teste.sql` cria contas de
 > teste (doadora, ONG aprovada, ONG pendente e admin, senha `elovoz123`); é
 > re-executável e pode ficar na pasta enquanto for útil.
 
@@ -60,6 +61,7 @@ etc.) em português, porque aparece para o usuário.
 | Função | O que faz | Usada em |
 |---|---|---|
 | `current_user_type()` | papel de quem chama, lido de `profiles` | policies |
+| `notify_followers_on_new_need()` | trigger AFTER INSERT em `needs`: um aviso em `notifications` para cada seguidor da ONG | RF09 |
 | `delete_own_account()` | apaga o próprio usuário de `auth.users` (o cascade leva o resto); recusa admin | `/perfil` (`profile/services/account.ts`) |
 
 A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
@@ -85,7 +87,8 @@ A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
    Editor e o script foi apagado, então **não está em `supabase/migrations/`**.
    Se recriar o banco a partir das migrations, recrie esse trigger. O mesmo vale
    para a tabela `ong_opening_hours` (e as policies dela) e para a função
-   `delete_own_account`: foram aplicadas pelo SQL Editor e não estão em
+   `delete_own_account` e o trigger `notify_followers_on_new_need` (com o índice
+   e a publicação do Realtime): foram aplicados pelo SQL Editor e não estão em
    `supabase/migrations/`.
 5. **UPDATE/DELETE barrado pela RLS não dá erro.** Só afeta zero linhas. Os
    services de `needs` encadeiam `.select("id").single()` para que isso vire o
@@ -112,5 +115,9 @@ A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar
 
 - Storage: nenhum bucket em uso (o schema não guarda foto de perfil nem de
   necessidade). Se entrar, criar bucket público e documentar aqui.
-- Realtime: precisa ser habilitado para a tabela `needs` quando o RF09 for
-  implementado.
+
+## Realtime
+
+Só `notifications` está na publicação `supabase_realtime`. O app assina INSERT
+filtrado por `donor_id=eq.<id do doador>`; a RLS de SELECT vale também para o
+Realtime, então ninguém recebe aviso alheio mesmo mudando o filtro.
