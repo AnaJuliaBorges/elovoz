@@ -35,6 +35,7 @@ splitting funcionar.
 | `/login` | AuthLayout | `publicOnlyLoader` | ✅ |
 | `/cadastrar` | AuthLayout | — | wizard doador/ONG ✅ |
 | `/recuperar-senha`, `/redefinir-senha` | AuthLayout | — | ✅ |
+| `/privacidade` | AuthLayout | — (pública para todos) | política de privacidade ✅ (RNF03) |
 | `/necessidades` | AppLayout | `protectedLoader` | busca com filtros ✅ (RF04) |
 | `/necessidades/:id` | AppLayout | `protectedLoader` | detalhe + manifestar interesse ✅ (RF06) |
 | `/ongs/:id` | AppLayout | `protectedLoader` | perfil público + seguir ✅ (RF05, RF11) |
@@ -252,6 +253,14 @@ admin. O e-mail não aparece: ele mora em `auth.users`, fora do alcance do
 client.
 
 **Falta:** a "gestão de usuários" que a especificação cita junto do painel.
+
+### `legal` (implementada)
+
+`/privacidade`: a política de privacidade (RNF03/LGPD), pública, com link na
+home, no cadastro (abre em outra aba para não perder o formulário) e na seção
+"Privacidade" do perfil. `model/privacy.ts` guarda o e-mail de contato do
+responsável pelos dados e a data da última atualização. **Ao mudar o que é
+coletado ou quem vê o quê, atualize o texto e a data.**
 
 ### `notifications` (implementada)
 

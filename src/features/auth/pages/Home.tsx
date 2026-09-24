@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { HandHeart, MapPin, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui";
+import { PRIVACY_POLICY_PATH } from "@/features/legal";
 import logo from "@/assets/logo.png";
 
 const HIGHLIGHTS = [
@@ -85,6 +86,15 @@ export default function Home() {
           <Link to="/cadastrar">Cadastrar ONG</Link>
         </Button>
       </section>
+
+      <footer className="text-center text-sm text-muted-foreground">
+        <Link
+          to={PRIVACY_POLICY_PATH}
+          className="underline underline-offset-4 hover:text-foreground"
+        >
+          Política de privacidade
+        </Link>
+      </footer>
     </div>
   );
 }

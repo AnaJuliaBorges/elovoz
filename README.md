@@ -54,7 +54,8 @@ painel da ONG (necessidades e horários), perfil público da ONG com seguir,
 manifestar interesse, "Minhas doações" (histórico de interesses e ONGs
 seguidas), perfil da conta (dados, privacidade e exclusão de conta), o painel
 do administrador com a verificação das ONGs e os avisos em tempo real de novas
-necessidades das ONGs seguidas.
+necessidades das ONGs seguidas. A política de privacidade fica em
+`/privacidade`.
 
 Detalhes de arquitetura em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) e do
 banco em [docs/SUPABASE.md](docs/SUPABASE.md).

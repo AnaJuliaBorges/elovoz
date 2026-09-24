@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Building2, LogOut } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui";
 import { useLogout, useProfile, type UserType } from "@/features/auth";
+import { PRIVACY_POLICY_PATH } from "@/features/legal";
 import { useMyOng } from "@/features/ongs";
 import { DeleteAccountSection } from "../components/DeleteAccountSection";
 import { ProfileForm } from "../components/ProfileForm";
@@ -112,7 +113,13 @@ export default function ProfilePage() {
 
       <Section title="Privacidade">
         <p className="text-sm text-muted-foreground">
-          {PRIVACY_NOTES[profile.user_type]}
+          {PRIVACY_NOTES[profile.user_type]}{" "}
+          <Link
+            to={PRIVACY_POLICY_PATH}
+            className="text-secondary underline underline-offset-4"
+          >
+            Ler a política de privacidade
+          </Link>
         </p>
 
         <DeleteAccountSection userType={profile.user_type} />

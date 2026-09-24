@@ -48,6 +48,13 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            // pública para todo mundo: o visitante lê antes de se cadastrar
+            path: "privacidade",
+            lazy: lazyPage(
+              () => import("./features/legal/pages/PrivacyPolicyPage"),
+            ),
+          },
+          {
             path: "redefinir-senha",
             lazy: lazyPage(
               () => import("./features/auth/pages/ResetPasswordPage"),

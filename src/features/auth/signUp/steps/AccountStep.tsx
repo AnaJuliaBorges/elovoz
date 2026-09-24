@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { HandHeart, Building2 } from "lucide-react";
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { formatPhone } from "@/lib/masks";
+import { PRIVACY_POLICY_PATH } from "@/features/legal";
 import { accountSchema, type AccountFormInput } from "../../model/schema";
 
 const ROLES = [
@@ -168,6 +170,18 @@ export function AccountStep({
             ? "Continuar"
             : "Criar conta"}
       </Button>
+
+      <p className="text-center text-xs text-muted-foreground">
+        Ao criar a conta, você concorda com a{" "}
+        <Link
+          to={PRIVACY_POLICY_PATH}
+          target="_blank"
+          className="text-primary underline underline-offset-4"
+        >
+          Política de privacidade
+        </Link>
+        .
+      </p>
     </form>
   );
 }
