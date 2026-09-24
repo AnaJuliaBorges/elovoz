@@ -1,3 +1,3 @@
 // API pública da feature `admin`.
-// Ainda vazia: painel de aprovação e recusa de ONGs pendentes (RF08).
+// Vazia de propósito: a única tela (`/admin`) é importada direto pelo `main.tsx`.
 export {};

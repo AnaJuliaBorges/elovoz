@@ -23,7 +23,7 @@ const ong: FollowedOng = {
 };
 
 function setup({
-  data = [ong] as FollowedOng[] | undefined,
+  data = [ong] as FollowedOng[] | null,
   isLoading = false,
   isError = false,
 } = {}) {
@@ -99,13 +99,13 @@ describe("FollowedOngsList", () => {
   });
 
   it("não mostra lista enquanto carrega", () => {
-    setup({ data: undefined, isLoading: true });
+    setup({ data: null, isLoading: true });
 
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
 
   it("deixa tentar de novo quando a busca falha", async () => {
-    const { refetch } = setup({ data: undefined, isError: true });
+    const { refetch } = setup({ data: null, isError: true });
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: "Tentar de novo" }));

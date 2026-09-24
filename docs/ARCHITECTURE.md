@@ -44,7 +44,7 @@ splitting funcionar.
 | `/minhas-doacoes` | AppLayout | `donorLoader` | histórico de interesses + ONGs seguidas ✅ (RF06, RF11) |
 | `/notificacoes` | AppLayout | `protectedLoader` | placeholder (RF09) |
 | `/perfil` | AppLayout | `protectedLoader` | dados da conta, privacidade, exclusão de conta e sair ✅ (RNF03) |
-| `/admin` | AppLayout | `adminLoader` | placeholder (RF08) |
+| `/admin` | AppLayout | `adminLoader` | verificação de ONGs: aprovar, recusar, revogar ✅ (RF08) |
 
 O papel do usuário (`profiles.user_type`) decide para onde o login leva e o que
 o MenuBar mostra. O mapa está em `src/features/auth/model/profile.ts`
@@ -134,8 +134,8 @@ Perfil público da instituição e seguir/deixar de seguir (RF05, RF11), mais o
 | `pages/OngProfilePage.tsx` | perfil: missão, contato, endereço e as necessidades da ONG |
 | `components/FollowOngButton.tsx` | toggle seguir/seguindo; só aparece para doador |
 | `components/OngContacts.tsx` | telefones (WhatsApp vai pro `wa.me`, fixo pro discador) e redes |
-| `model/ong.ts` | `MyOng`, `OngProfile`, `OngContact`, formatação de endereço e links das redes |
-| `services/ongs.ts` | `fetchMyOng` (por `profile_id`) e `fetchOngProfile` (por `id`, com embeds) |
+| `model/ong.ts` | `MyOng`, `OngProfile`, `OngForReview`, `FollowedOng`, `OngContact`, formatação de endereço e links das redes |
+| `services/ongs.ts` | `fetchMyOng` (por `profile_id`), `fetchOngProfile` (por `id`, com embeds) e, para o admin, `fetchOngsForReview` e `setOngVerificationStatus` |
 | `services/ongFollowers.ts` | `fetchIsFollowingOng`, `fetchFollowedOngs`, `followOng`, `unfollowOng`, `followErrorMessage` |
 | `components/FollowedOngsList.tsx` | ONGs que o doador segue, com "Deixar de seguir"; exportada para `/minhas-doacoes` |
 | `pages/OngHoursPage.tsx` | `/painel/horarios`: a ONG edita a própria semana |
@@ -224,12 +224,40 @@ oferece).
 **Sair no celular:** o MenuBar mobile não tem "Sair" (só o desktop tem), então
 a saída mora no fim do perfil.
 
+### `admin` (implementada)
+
+`/admin`: verificação das ONGs (RF08). Os services ficam no agregado
+`ongs/services/ongs.ts` e chegam pelo barrel de `ongs`; aqui mora só a tela.
+
+| Arquivo | Papel |
+|---|---|
+| `pages/AdminOngsPage.tsx` | abas Pendentes / Aprovadas / Recusadas, com a contagem de cada uma |
+| `components/OngReviewCard.tsx` | o que dá para conferir sem documentos: CNPJ, razão social, responsável (nome e telefone), endereço, contatos, redes e missão, mais as ações |
+| `model/review.ts` | `VERIFICATION_TABS`, `groupByStatus` e `ACTIONS_BY_STATUS` (o que cada status permite) |
+| `hooks/useOngReview.ts` | `useOngsForReview` e `useSetOngStatus` |
+
+**Ações por status:** pendente → aprovar ou recusar; aprovada → revogar (vira
+`rejected`); recusada → aprovar. O que tira a ONG do ar (recusar, revogar) pede
+confirmação; aprovar não. Mudar o status invalida a fila e também tudo de
+`["ongs"]` e `["needs"]`, porque muda o que o perfil público e a busca devolvem.
+
+**Uma consulta só:** a fila vem inteira (todas as ONGs, das mais antigas para
+as mais novas) e é separada por status no client. São poucas ONGs, e assim as
+abas mostram as contagens sem consultas extras. Se o volume crescer, trocar por
+consulta por status com `count`.
+
+**Responsável:** o embed `responsible:profiles(name, phone)` só volta
+preenchido para o admin, porque `profiles` é legível só pelo dono ou pelo
+admin. O e-mail não aparece: ele mora em `auth.users`, fora do alcance do
+client.
+
+**Falta:** a "gestão de usuários" que a especificação cita junto do painel.
+
 ### Próximas features (pastas criadas, sem implementação)
 
 | Feature | Escopo | Requisitos |
 |---|---|---|
 | `notifications` | avisos in-app das ONGs seguidas | RF09 |
-| `admin` | aprovação/recusa de ONGs | RF08 |
 
 ## Decisões
 

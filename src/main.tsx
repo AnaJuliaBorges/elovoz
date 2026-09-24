@@ -121,12 +121,7 @@ export const router = createBrowserRouter([
           {
             path: "admin",
             loader: adminLoader,
-            element: (
-              <Placeholder
-                title="Painel do administrador"
-                description="Aprovação e recusa de ONGs pendentes de verificação (RF08)."
-              />
-            ),
+            lazy: lazyPage(() => import("./features/admin/pages/AdminOngsPage")),
           },
         ],
       },

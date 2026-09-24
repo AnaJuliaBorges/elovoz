@@ -1,6 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import { createQueryBuilder } from "@/test/supabaseQueryBuilder";
-import { fetchMyOng, fetchOngProfile } from "./ongs";
+import {
+  fetchMyOng,
+  fetchOngProfile,
+  fetchOngsForReview,
+  setOngVerificationStatus,
+} from "./ongs";
 
 vi.mock("@/lib/supabase", () => ({
   supabase: {
@@ -120,5 +125,60 @@ describe("fetchOngProfile", () => {
     );
 
     await expect(fetchOngProfile("ong-1")).rejects.toThrow("rede");
+  });
+});
+
+describe("fetchOngsForReview", () => {
+  it("lista as ONGs com o responsável, das mais antigas para as mais novas", async () => {
+    const row = { ...ong, responsible: { name: "Ana", phone: null } };
+    const builder = createQueryBuilder({ data: [row] });
+    fromMock.mockReturnValue(builder as never);
+
+    await expect(fetchOngsForReview()).resolves.toEqual([row]);
+
+    expect(fromMock).toHaveBeenCalledWith("ongs");
+    expect(builder.select).toHaveBeenCalledWith(
+      expect.stringContaining("responsible:profiles(name, phone)"),
+    );
+    expect(builder.order).toHaveBeenCalledWith("created_at");
+  });
+
+  it("devolve lista vazia sem linhas", async () => {
+    fromMock.mockReturnValue(createQueryBuilder({ data: null }) as never);
+
+    await expect(fetchOngsForReview()).resolves.toEqual([]);
+  });
+
+  it("propaga erro do supabase", async () => {
+    fromMock.mockReturnValue(
+      createQueryBuilder({ error: new Error("RLS") }) as never,
+    );
+
+    await expect(fetchOngsForReview()).rejects.toThrow("RLS");
+  });
+});
+
+describe("setOngVerificationStatus", () => {
+  it("grava o novo status da ONG", async () => {
+    const builder = createQueryBuilder({ data: { id: "ong-1" } });
+    fromMock.mockReturnValue(builder as never);
+
+    await setOngVerificationStatus("ong-1", "approved");
+
+    expect(builder.update).toHaveBeenCalledWith({
+      verification_status: "approved",
+    });
+    expect(builder.eq).toHaveBeenCalledWith("id", "ong-1");
+    expect(builder.single).toHaveBeenCalled();
+  });
+
+  it("propaga o UPDATE barrado", async () => {
+    fromMock.mockReturnValue(
+      createQueryBuilder({ error: { code: "PGRST116" } }) as never,
+    );
+
+    await expect(
+      setOngVerificationStatus("ong-1", "rejected"),
+    ).rejects.toEqual({ code: "PGRST116" });
   });
 });

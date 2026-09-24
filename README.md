@@ -52,10 +52,10 @@ Implementado: autenticação (login, cadastro de doador, cadastro de ONG em 4
 passos, recuperação de senha), busca e detalhe de necessidades com filtros,
 painel da ONG (necessidades e horários), perfil público da ONG com seguir,
 manifestar interesse, "Minhas doações" (histórico de interesses e ONGs
-seguidas) e perfil da conta (dados, privacidade e exclusão de conta).
+seguidas), perfil da conta (dados, privacidade e exclusão de conta) e o painel
+do administrador com a verificação das ONGs.
 
-Ainda como placeholder: notificações em tempo real (RF09) e o painel do
-administrador (RF08).
+Ainda como placeholder: notificações em tempo real (RF09).
 
 Detalhes de arquitetura em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) e do
 banco em [docs/SUPABASE.md](docs/SUPABASE.md).
