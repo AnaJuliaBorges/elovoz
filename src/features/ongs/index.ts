@@ -16,6 +16,18 @@ export {
 // o admin revisa os mesmos contatos que o perfil público mostra
 export { OngContacts } from "./components/OngContacts";
 
+// o cadastro (feature `auth`) e o painel editam a instituição com os mesmos
+// schemas e o mesmo formulário de endereço e contatos
+export { OngContactForm } from "./components/OngContactForm";
+export {
+  ongContactSchema,
+  ongDataSchema,
+  ongIdentitySchema,
+  type OngContactFormInput,
+  type OngDataFormInput,
+  type OngIdentityFormInput,
+} from "./model/ongForm";
+
 // a lista de ONGs seguidas aparece em "Minhas doações" (feature `donations`)
 export { FollowedOngsList } from "./components/FollowedOngsList";
 

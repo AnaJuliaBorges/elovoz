@@ -50,7 +50,7 @@ Rodar um teste só: `npx vitest run src/lib/masks.test.ts` /
 
 Implementado: autenticação (login, cadastro de doador, cadastro de ONG em 4
 passos, recuperação de senha), busca e detalhe de necessidades com filtros,
-painel da ONG (necessidades e horários), perfil público da ONG com seguir,
+painel da ONG (necessidades, dados da instituição e horários), perfil público da ONG com seguir,
 manifestar interesse, "Minhas doações" (histórico de interesses e ONGs
 seguidas), perfil da conta (dados, privacidade e exclusão de conta), o painel
 do administrador com a verificação das ONGs e os avisos em tempo real de novas

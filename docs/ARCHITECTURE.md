@@ -42,6 +42,7 @@ splitting funcionar.
 | `/painel` | AppLayout | `ongLoader` | necessidades da ONG + status ✅ (RF03, RF07) |
 | `/painel/necessidades/nova`, `/painel/necessidades/:id/editar` | AppLayout | `ongLoader` | form de necessidade ✅ (RF03) |
 | `/painel/horarios` | AppLayout | `ongLoader` | horários de funcionamento da ONG ✅ |
+| `/painel/dados` | AppLayout | `ongLoader` | edição dos dados da instituição ✅ (RF05) |
 | `/minhas-doacoes` | AppLayout | `donorLoader` | histórico de interesses + ONGs seguidas ✅ (RF06, RF11) |
 | `/notificacoes` | AppLayout | `donorLoader` | avisos de novas necessidades das ONGs seguidas ✅ (RF09) |
 | `/perfil` | AppLayout | `protectedLoader` | dados da conta, privacidade, exclusão de conta e sair ✅ (RNF03) |
@@ -64,7 +65,7 @@ Login, cadastro e recuperação de senha.
 | `pages/SignUpPage.tsx` | orquestra o wizard e trata o recarregamento da página |
 | `pages/ForgotPasswordPage.tsx`, `pages/ResetPasswordPage.tsx` | fluxo de senha |
 | `model/profile.ts` | `UserType`, `Profile`, `HOME_BY_USER_TYPE` |
-| `model/schema.ts` | schemas zod de todos os formulários |
+| `model/schema.ts` | schemas zod dos formulários de conta; os da instituição (`ongDataSchema`, `ongContactSchema`) são da feature `ongs` e só são re-exportados aqui |
 | `services/profiles.ts` | ler/criar/atualizar a linha em `profiles` (`updateProfile` é usado pela feature `profile`) |
 | `services/signUp.ts` | cadastro de doador e de ONG, na ordem que a RLS exige |
 | `services/passwordReset.ts` | `resetPasswordForEmail` + `updateUser` |
@@ -125,7 +126,7 @@ partir de hoje; urgência alta primeiro, depois as mais novas; 12 por página
 a lista e o botão de nova necessidade, porque a policy de INSERT recusaria as
 outras de qualquer jeito.
 
-### `ongs` (implementada, menos a edição dos dados)
+### `ongs` (implementada)
 
 Perfil público da instituição e seguir/deixar de seguir (RF05, RF11), mais o
 `useMyOng` que o painel usa.
@@ -168,8 +169,27 @@ começando na segunda e tem um atalho que repete o primeiro horário nos dias
 sai mais simples do que diferença linha a linha. No perfil, dias vizinhos com a
 mesma faixa viram "Seg a Sex" e dias salteados viram "Seg, Qua e Sex".
 
-**Falta:** a ONG editar o resto dos dados institucionais (nome, missão,
-endereço, contatos e redes) — hoje só os horários têm tela de edição.
+**Edição dos dados (`/painel/dados`):** duas seções, cada uma com o próprio
+botão de salvar. "Identificação" edita nome fantasia e missão; razão social e
+CNPJ aparecem travados, porque são o que o admin conferiu para aprovar a ONG
+(corrigir passa pela equipe). "Endereço e contatos" reaproveita o
+`OngContactForm` do cadastro; salvar grava o endereço e as redes em `ongs` e
+substitui os telefones inteiros (apaga e regrava, como os horários). Toda
+escrita invalida `["ongs"]`, `["my-ong"]` e `["needs"]`, porque o nome e o
+bairro também aparecem no painel e nos cards da busca.
+
+| Arquivo | Papel |
+|---|---|
+| `pages/OngDataPage.tsx` | `/painel/dados` |
+| `components/OngIdentityForm.tsx` | nome fantasia e missão, com razão social e CNPJ só para leitura |
+| `components/OngContactForm.tsx` | endereço, telefones e redes; exportado para o passo do cadastro, que só o envolve com "Voltar"/"Continuar" |
+| `model/ongForm.ts` | `ongIdentitySchema`, `ongDataSchema` (= identificação + razão social e CNPJ), `ongContactSchema` e `toOngForms` (banco → formulários) |
+| `hooks/useOngData.ts` | `useOngForEdit`, `useUpdateOngIdentity`, `useUpdateOngContact` |
+
+**Por que os schemas moram aqui:** o cadastro (`auth`) e o painel editam os
+mesmos dados. `auth` e `ongs` se importam mutuamente pelo barrel, então
+`auth/model/schema.ts` só re-exporta, sem usar os schemas no topo do módulo.
+Um `.extend()` ali quebraria na inicialização quando `ongs` carregasse primeiro.
 
 ### `donations` (implementada)
 
@@ -208,7 +228,7 @@ necessidade, não na lista.
 
 | Arquivo | Papel |
 |---|---|
-| `pages/ProfilePage.tsx` | seções "Seus dados", "Sua instituição" (só ONG: atalhos para o perfil público e os horários), "Privacidade" e o botão "Sair da conta" |
+| `pages/ProfilePage.tsx` | seções "Seus dados", "Sua instituição" (só ONG: itens que levam a `/painel/dados`, `/painel/horarios` e ao perfil público), "Privacidade" e o botão "Sair da conta" |
 | `components/ProfileForm.tsx` | nome e telefone; o e-mail aparece só para leitura (vem da sessão, não de `profiles`) |
 | `components/DeleteAccountSection.tsx` | exclusão da conta com confirmação; o texto diz o que some para cada papel |
 | `model/schema.ts` | `profileSchema` |
@@ -221,6 +241,11 @@ login em `auth.users` continuaria vivo. Por isso é a única RPC do app:
 `on delete cascade` leva perfil, ONG, necessidades, interesses, seguidas e
 notificações. Admin não se exclui por aqui (a função recusa, e a tela nem
 oferece).
+
+**Editar a instituição:** tudo que a ONG edita sobre ela mesma (dados e
+horários) tem entrada só pelo Perfil; o painel (`/painel`) fica só com as
+necessidades. As telas continuam em `/painel/dados` e `/painel/horarios`, e o
+"Voltar" delas volta para o Perfil.
 
 **Sair no celular:** o MenuBar mobile não tem "Sair" (só o desktop tem), então
 a saída mora no fim do perfil.

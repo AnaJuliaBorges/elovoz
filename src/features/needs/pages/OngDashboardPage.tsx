@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Clock, ClipboardList, Plus } from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui";
 import { useMyOng } from "@/features/ongs";
 import { OngNeedItem } from "../components/OngNeedItem";
@@ -111,23 +111,15 @@ export default function OngDashboardPage() {
           <p className="text-sm text-muted-foreground">{ong.trade_name}</p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
-            <Link to="/painel/horarios">
-              <Clock aria-hidden="true" />
-              Horários
+        {/* editar a instituição (dados e horários) fica no Perfil */}
+        {approved && (
+          <Button asChild>
+            <Link to={NEW_NEED_PATH}>
+              <Plus aria-hidden="true" />
+              Nova necessidade
             </Link>
           </Button>
-
-          {approved && (
-            <Button asChild>
-              <Link to={NEW_NEED_PATH}>
-                <Plus aria-hidden="true" />
-                Nova necessidade
-              </Link>
-            </Button>
-          )}
-        </div>
+        )}
       </header>
 
       {ong.verification_status === "pending" && (

@@ -4,4 +4,5 @@ export const ongKeys = {
   following: (id: string) => ["ongs", "following", id] as const,
   followed: ["ongs", "followed"] as const,
   openingHours: (id: string) => ["ongs", "opening-hours", id] as const,
+  edit: (id: string) => ["ongs", "edit", id] as const,
 };

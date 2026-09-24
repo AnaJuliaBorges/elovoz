@@ -1,7 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import { errorCode } from "@/lib/postgrest";
+import { onlyDigits } from "@/lib/masks";
+import type { OngContactFormInput, OngIdentityFormInput } from "../model/ongForm";
 import type {
   MyOng,
+  OngEditable,
   OngForReview,
   OngProfile,
   VerificationStatus,
@@ -101,4 +104,85 @@ export async function setOngVerificationStatus(
     .single();
 
   if (error) throw error;
+}
+
+const ONG_EDITABLE_COLUMNS = `
+  id, trade_name, legal_name, cnpj, mission, state_id, city_id, neighborhood,
+  address, instagram, facebook, website,
+  contacts:ong_contacts(id, number, whatsapp)
+`;
+
+/** A ONG com os campos que o painel edita. */
+export async function fetchOngForEdit(id: string): Promise<OngEditable | null> {
+  const { data, error } = await supabase
+    .from("ongs")
+    .select(ONG_EDITABLE_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return (data as unknown as OngEditable | null) ?? null;
+}
+
+/**
+ * Nome fantasia e missão. Razão social e CNPJ não passam por aqui: são o que
+ * o admin conferiu para aprovar a ONG.
+ */
+export async function updateOngIdentity(
+  id: string,
+  values: OngIdentityFormInput,
+): Promise<void> {
+  const { error } = await supabase
+    .from("ongs")
+    .update({ trade_name: values.trade_name, mission: values.mission })
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (error) throw error;
+}
+
+/**
+ * Endereço e redes em `ongs`; os telefones são substituídos inteiros (apaga e
+ * regrava), como os horários — para poucas linhas sai mais simples que
+ * comparar uma a uma.
+ */
+export async function updateOngContact(
+  id: string,
+  values: OngContactFormInput,
+): Promise<void> {
+  const { error } = await supabase
+    .from("ongs")
+    .update({
+      state_id: values.state_id,
+      city_id: values.city_id,
+      neighborhood: values.neighborhood,
+      address: values.address,
+      instagram: values.instagram || null,
+      facebook: values.facebook || null,
+      website: values.website || null,
+    })
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (error) throw error;
+
+  const { error: deleteError } = await supabase
+    .from("ong_contacts")
+    .delete()
+    .eq("ong_id", id);
+
+  if (deleteError) throw deleteError;
+
+  const { error: insertError } = await supabase.from("ong_contacts").insert(
+    values.contacts.map((contact) => ({
+      ong_id: id,
+      number: onlyDigits(contact.number),
+      whatsapp: contact.whatsapp,
+    })),
+  );
+
+  if (insertError) throw insertError;
 }

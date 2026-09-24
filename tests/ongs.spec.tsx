@@ -120,7 +120,7 @@ test.describe("Horários de funcionamento", () => {
     verification_status: "approved",
   };
 
-  test("ONG preenche os horários pelo painel", async ({ page }) => {
+  test("ONG preenche os horários pelo perfil", async ({ page }) => {
     const state = await setupSupabaseMocks(page, {
       profile: ongAccount,
       ong: approvedOng,
@@ -129,7 +129,8 @@ test.describe("Horários de funcionamento", () => {
     await page.goto("/login");
     await login(page);
 
-    await page.getByRole("link", { name: "Horários" }).click();
+    await page.getByRole("button", { name: "Perfil" }).click();
+    await page.getByRole("link", { name: /Horários de funcionamento/ }).click();
     await expect(page).toHaveURL(/\/painel\/horarios$/);
 
     await page.getByRole("checkbox", { name: "Segunda" }).click();

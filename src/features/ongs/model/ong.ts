@@ -37,6 +37,23 @@ export interface OngProfile {
   opening_hours: OpeningHour[];
 }
 
+/** A própria ONG como o painel edita: com os ids de estado e cidade. */
+export interface OngEditable {
+  id: string;
+  trade_name: string;
+  legal_name: string;
+  cnpj: string;
+  mission: string;
+  state_id: string;
+  city_id: string;
+  neighborhood: string;
+  address: string;
+  instagram: string | null;
+  facebook: string | null;
+  website: string | null;
+  contacts: OngContact[];
+}
+
 /**
  * A ONG como o admin revisa (RF08): os dados institucionais, os contatos e o
  * responsável pela conta, que só o admin consegue ler em `profiles`.

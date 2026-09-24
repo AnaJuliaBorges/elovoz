@@ -1,5 +1,12 @@
 import { Link } from "react-router-dom";
-import { Building2, LogOut } from "lucide-react";
+import {
+  Building2,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  LogOut,
+  type LucideIcon,
+} from "lucide-react";
 import { Button, Skeleton } from "@/components/ui";
 import { useLogout, useProfile, type UserType } from "@/features/auth";
 import { PRIVACY_POLICY_PATH } from "@/features/legal";
@@ -37,7 +44,43 @@ function Section({
   );
 }
 
-/** Atalhos da ONG: o cadastro dela é editado pelo painel, não por aqui. */
+function OngLink({
+  to,
+  icon: Icon,
+  title,
+  description,
+}: {
+  to: string;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}) {
+  return (
+    <li>
+      <Link
+        to={to}
+        className="flex items-center gap-3 rounded-md p-3 transition-colors outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      >
+        <span className="rounded-full bg-primary/10 p-2">
+          <Icon className="size-4 text-primary" aria-hidden="true" />
+        </span>
+        <span className="flex flex-1 flex-col">
+          <span className="text-sm font-medium">{title}</span>
+          <span className="text-xs text-muted-foreground">{description}</span>
+        </span>
+        <ChevronRight
+          className="size-4 shrink-0 text-muted-foreground"
+          aria-hidden="true"
+        />
+      </Link>
+    </li>
+  );
+}
+
+/**
+ * Tudo que a ONG edita sobre a instituição mora aqui (o painel fica só com as
+ * necessidades); cada item leva à tela de edição.
+ */
 function OngSection() {
   const { data: ong, isLoading } = useMyOng();
 
@@ -54,16 +97,28 @@ function OngSection() {
         {ong.trade_name}
       </p>
 
-      <div className="flex flex-wrap gap-2">
+      <ul className="-mx-3 flex flex-col">
+        <OngLink
+          to="/painel/dados"
+          icon={Building2}
+          title="Dados da instituição"
+          description="Nome, missão, endereço, telefones e redes"
+        />
+        <OngLink
+          to="/painel/horarios"
+          icon={Clock}
+          title="Horários de funcionamento"
+          description="Quando o doador pode procurar vocês"
+        />
         {ong.verification_status === "approved" && (
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/ongs/${ong.id}`}>Ver perfil público</Link>
-          </Button>
+          <OngLink
+            to={`/ongs/${ong.id}`}
+            icon={ExternalLink}
+            title="Ver perfil público"
+            description="Como os doadores veem a instituição"
+          />
         )}
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/painel/horarios">Horários de funcionamento</Link>
-        </Button>
-      </div>
+      </ul>
     </Section>
   );
 }

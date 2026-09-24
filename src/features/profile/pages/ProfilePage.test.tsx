@@ -83,11 +83,14 @@ describe("ProfilePage", () => {
 
     expect(screen.getByText("Casa Esperança")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Ver perfil público" }),
-    ).toHaveAttribute("href", "/ongs/ong-1");
+      screen.getByRole("link", { name: /Dados da instituição/ }),
+    ).toHaveAttribute("href", "/painel/dados");
     expect(
-      screen.getByRole("link", { name: "Horários de funcionamento" }),
+      screen.getByRole("link", { name: /Horários de funcionamento/ }),
     ).toHaveAttribute("href", "/painel/horarios");
+    expect(
+      screen.getByRole("link", { name: /Ver perfil público/ }),
+    ).toHaveAttribute("href", "/ongs/ong-1");
   });
 
   it("esconde o perfil público enquanto a ONG não é aprovada", () => {
@@ -97,7 +100,7 @@ describe("ProfilePage", () => {
     });
 
     expect(
-      screen.queryByRole("link", { name: "Ver perfil público" }),
+      screen.queryByRole("link", { name: /Ver perfil público/ }),
     ).not.toBeInTheDocument();
   });
 

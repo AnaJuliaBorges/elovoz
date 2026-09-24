@@ -3,8 +3,11 @@ import { createQueryBuilder } from "@/test/supabaseQueryBuilder";
 import {
   fetchMyOng,
   fetchOngProfile,
+  fetchOngForEdit,
   fetchOngsForReview,
   setOngVerificationStatus,
+  updateOngContact,
+  updateOngIdentity,
 } from "./ongs";
 
 vi.mock("@/lib/supabase", () => ({
@@ -180,5 +183,133 @@ describe("setOngVerificationStatus", () => {
     await expect(
       setOngVerificationStatus("ong-1", "rejected"),
     ).rejects.toEqual({ code: "PGRST116" });
+  });
+});
+
+describe("fetchOngForEdit", () => {
+  it("busca a ONG com os ids de localização e os contatos", async () => {
+    const builder = createQueryBuilder({ data: { id: "ong-1" } });
+    fromMock.mockReturnValue(builder as never);
+
+    await expect(fetchOngForEdit("ong-1")).resolves.toEqual({ id: "ong-1" });
+
+    expect(builder.select).toHaveBeenCalledWith(
+      expect.stringContaining("state_id, city_id"),
+    );
+    expect(builder.eq).toHaveBeenCalledWith("id", "ong-1");
+  });
+
+  it("devolve null quando não acha", async () => {
+    fromMock.mockReturnValue(createQueryBuilder({ data: null }) as never);
+
+    await expect(fetchOngForEdit("ong-1")).resolves.toBeNull();
+  });
+
+  it("propaga erro do supabase", async () => {
+    fromMock.mockReturnValue(
+      createQueryBuilder({ error: new Error("RLS") }) as never,
+    );
+
+    await expect(fetchOngForEdit("ong-1")).rejects.toThrow("RLS");
+  });
+});
+
+describe("updateOngIdentity", () => {
+  it("grava só nome fantasia e missão", async () => {
+    const builder = createQueryBuilder({ data: { id: "ong-1" } });
+    fromMock.mockReturnValue(builder as never);
+
+    await updateOngIdentity("ong-1", {
+      trade_name: "Casa Nova",
+      mission: "Distribuir alimentos para famílias em situação de rua.",
+    });
+
+    expect(builder.update).toHaveBeenCalledWith({
+      trade_name: "Casa Nova",
+      mission: "Distribuir alimentos para famílias em situação de rua.",
+    });
+    expect(builder.single).toHaveBeenCalled();
+  });
+
+  it("propaga o UPDATE barrado", async () => {
+    fromMock.mockReturnValue(
+      createQueryBuilder({ error: { code: "PGRST116" } }) as never,
+    );
+
+    await expect(
+      updateOngIdentity("ong-1", { trade_name: "Casa", mission: "x" }),
+    ).rejects.toEqual({ code: "PGRST116" });
+  });
+});
+
+describe("updateOngContact", () => {
+  const values = {
+    state_id: "uf-rj",
+    city_id: "rio",
+    neighborhood: "Centro",
+    address: "Rua das Flores, 10",
+    contacts: [{ number: "(21) 99876-5432", whatsapp: true }],
+    instagram: "@casa",
+    facebook: "",
+    website: "",
+  };
+
+  it("grava o endereço e substitui os telefones", async () => {
+    const ongBuilder = createQueryBuilder({ data: { id: "ong-1" } });
+    const deleteBuilder = createQueryBuilder();
+    const insertBuilder = createQueryBuilder();
+    fromMock
+      .mockReturnValueOnce(ongBuilder as never)
+      .mockReturnValueOnce(deleteBuilder as never)
+      .mockReturnValueOnce(insertBuilder as never);
+
+    await updateOngContact("ong-1", values);
+
+    expect(ongBuilder.update).toHaveBeenCalledWith({
+      state_id: "uf-rj",
+      city_id: "rio",
+      neighborhood: "Centro",
+      address: "Rua das Flores, 10",
+      instagram: "@casa",
+      facebook: null,
+      website: null,
+    });
+    expect(fromMock).toHaveBeenNthCalledWith(2, "ong_contacts");
+    expect(deleteBuilder.eq).toHaveBeenCalledWith("ong_id", "ong-1");
+    expect(insertBuilder.insert).toHaveBeenCalledWith([
+      { ong_id: "ong-1", number: "21998765432", whatsapp: true },
+    ]);
+  });
+
+  it("não mexe nos telefones quando o endereço falha", async () => {
+    fromMock.mockReturnValueOnce(
+      createQueryBuilder({ error: { code: "PGRST116" } }) as never,
+    );
+
+    await expect(updateOngContact("ong-1", values)).rejects.toEqual({
+      code: "PGRST116",
+    });
+    expect(fromMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("propaga erro ao apagar os telefones antigos", async () => {
+    fromMock
+      .mockReturnValueOnce(createQueryBuilder({ data: { id: "ong-1" } }) as never)
+      .mockReturnValueOnce(
+        createQueryBuilder({ error: new Error("delete") }) as never,
+      );
+
+    await expect(updateOngContact("ong-1", values)).rejects.toThrow("delete");
+  });
+
+  it("propaga erro ao gravar os telefones novos", async () => {
+    fromMock
+      .mockReturnValueOnce(createQueryBuilder({ data: { id: "ong-1" } }) as never)
+      .mockReturnValueOnce(createQueryBuilder() as never)
+      .mockReturnValueOnce(
+        createQueryBuilder({ error: new Error("insert") }) as never,
+      );
+
+    await expect(updateOngContact("ong-1", values)).rejects.toThrow("insert");
   });
 });
