@@ -89,12 +89,12 @@
 
 @media (min-width: 48rem) {
   :root {
-    --text-scale: 1.25;
+    --text-scale: 1.125;
   }
 }
 
 @media (min-width: 64rem) {
   :root {
-    --text-scale: 1.375;
+    --text-scale: 1.25;
   }
 }

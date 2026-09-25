@@ -54,7 +54,14 @@ export function DeleteAccountSection({ userType }: { userType: UserType }) {
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="destructive" disabled={deleteAccount.isPending}>
+          {/* discreto de propósito: a ação destrutiva de verdade é o botão
+              vermelho da confirmação */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-2 text-sm text-destructive hover:text-destructive"
+            disabled={deleteAccount.isPending}
+          >
             <Trash2 aria-hidden="true" />
             {deleteAccount.isPending ? "Excluindo..." : "Excluir minha conta"}
           </Button>
