@@ -137,7 +137,9 @@ export function OngNeedItem({ need }: { need: NeedWithInterestCount }) {
     <article
       aria-label={need.title}
       className={cn(
-        "flex flex-col gap-4 rounded-lg border bg-surface p-4",
+        // altura cheia + status no fim: lado a lado no grid do painel, os
+        // controles ficam alinhados mesmo com títulos de tamanhos diferentes
+        "flex h-full flex-col gap-4 rounded-lg border bg-surface p-4",
         deleteNeed.isPending && "opacity-50",
       )}
     >
@@ -159,7 +161,7 @@ export function OngNeedItem({ need }: { need: NeedWithInterestCount }) {
         <UrgencyBadge urgency={need.urgency} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="mt-auto flex flex-wrap items-center gap-3">
         <Select
           value={status}
           onValueChange={handleStatusChange}

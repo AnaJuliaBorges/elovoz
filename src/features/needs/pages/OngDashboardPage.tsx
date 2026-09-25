@@ -9,7 +9,7 @@ const NEW_NEED_PATH = "/painel/necessidades/nova";
 
 function ListSkeleton() {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       {Array.from({ length: 3 }, (_, index) => (
         <Skeleton key={index} className="h-32 w-full" />
       ))}
@@ -61,7 +61,9 @@ function OngNeedsList({ ongId }: { ongId: string }) {
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    // duas colunas só a partir do lg: entre md e lg o conteúdo ainda é
+    // estreito (max-w-3xl) e o select de status não caberia ao lado das tags
+    <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       {needs.map((need) => (
         <li key={need.id}>
           <OngNeedItem need={need} />
