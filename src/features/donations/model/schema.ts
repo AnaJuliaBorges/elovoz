@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { todayIso } from "@/lib/dates";
+import { parseBrDate, todayIso } from "@/lib/dates";
 
 // `expected_quantity` é integer no Postgres: acima disso o INSERT estoura
 const MAX_QUANTITY = 1_000_000;
@@ -22,12 +22,17 @@ export const interestSchema = z.object({
           Number(value) <= MAX_QUANTITY),
       "Informe um número inteiro maior que zero",
     ),
+  // digitada como DD/MM/AAAA; o service converte para a coluna `date`
   expected_deadline: z
     .string()
     .refine(
-      (value) => !value || value >= todayIso(),
-      "A data não pode estar no passado",
-    ),
+      (value) => !value || parseBrDate(value) !== null,
+      "Data inválida. Use o formato dd/mm/aaaa",
+    )
+    .refine((value) => {
+      const iso = parseBrDate(value);
+      return !iso || iso >= todayIso();
+    }, "A data não pode estar no passado"),
   share_contact: z.boolean(),
 });
 

@@ -6,6 +6,7 @@ import {
   createNeed,
   deleteNeed,
   fetchNeed,
+  fetchOngDashboardNeeds,
   fetchOngNeeds,
   needErrorMessage,
   searchNeeds,
@@ -161,6 +162,48 @@ describe("fetchNeed", () => {
     mockBuilder({ error: new Error("RLS") });
 
     await expect(fetchNeed("need-1")).rejects.toThrow("RLS");
+  });
+});
+
+describe("fetchOngDashboardNeeds", () => {
+  it("conta os interesses de cada necessidade e quantos já foram respondidos", async () => {
+    const builder = mockBuilder({
+      data: [
+        {
+          id: "need-1",
+          interests: [
+            { answered_at: "2026-09-24T12:00:00Z" },
+            { answered_at: null },
+            { answered_at: null },
+          ],
+        },
+        { id: "need-2", interests: [] },
+      ],
+    });
+
+    await expect(fetchOngDashboardNeeds("ong-1")).resolves.toEqual([
+      { id: "need-1", interest_count: 3, answered_count: 1 },
+      { id: "need-2", interest_count: 0, answered_count: 0 },
+    ]);
+
+    expect(builder.select).toHaveBeenCalledWith(
+      expect.stringContaining("interests(answered_at)"),
+    );
+    expect(builder.eq).toHaveBeenCalledWith("ong_id", "ong-1");
+  });
+
+  it("conta zero quando a resposta vem sem o embed", async () => {
+    mockBuilder({ data: [{ id: "need-1" }] });
+
+    await expect(fetchOngDashboardNeeds("ong-1")).resolves.toEqual([
+      { id: "need-1", interest_count: 0, answered_count: 0 },
+    ]);
+  });
+
+  it("propaga erro do supabase", async () => {
+    mockBuilder({ error: new Error("RLS") });
+
+    await expect(fetchOngDashboardNeeds("ong-1")).rejects.toThrow("RLS");
   });
 });
 

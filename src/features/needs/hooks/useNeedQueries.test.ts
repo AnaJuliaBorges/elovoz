@@ -1,11 +1,17 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
-import { fetchNeed, fetchOngNeeds, searchNeeds } from "../services/needs";
+import {
+  fetchNeed,
+  fetchOngDashboardNeeds,
+  fetchOngNeeds,
+  searchNeeds,
+} from "../services/needs";
 import type { NeedWithOng, NeedsPage } from "../model/need";
 import {
   nextSearchPage,
   useNeed,
+  useOngDashboardNeeds,
   useOngNeeds,
   useSearchNeeds,
 } from "./useNeedQueries";
@@ -84,6 +90,25 @@ describe("useNeed", () => {
 
     expect(result.current.fetchStatus).toBe("idle");
     expect(fetchNeed).not.toHaveBeenCalled();
+  });
+});
+
+describe("useOngDashboardNeeds", () => {
+  it("espera o id da ONG", () => {
+    renderHook(() => useOngDashboardNeeds(undefined), { wrapper });
+
+    expect(fetchOngDashboardNeeds).not.toHaveBeenCalled();
+  });
+
+  it("lista as necessidades do painel", async () => {
+    vi.mocked(fetchOngDashboardNeeds).mockResolvedValue([]);
+
+    const { result } = renderHook(() => useOngDashboardNeeds("ong-1"), {
+      wrapper,
+    });
+
+    await waitFor(() => expect(result.current.data).toEqual([]));
+    expect(fetchOngDashboardNeeds).toHaveBeenCalledWith("ong-1");
   });
 });
 

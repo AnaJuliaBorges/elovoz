@@ -3,13 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { toast } from "sonner";
 import { useDeleteNeed, useUpdateNeedStatus } from "../hooks/useNeedMutations";
-import type { NeedWithCategory } from "../model/need";
+import type { NeedWithInterestCount } from "../model/need";
 import { OngNeedItem } from "./OngNeedItem";
 
 vi.mock("../hooks/useNeedMutations");
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-const need: NeedWithCategory = {
+const need: NeedWithInterestCount = {
   id: "need-1",
   ong_id: "ong-1",
   category_id: "cat-1",
@@ -22,6 +22,8 @@ const need: NeedWithCategory = {
   created_at: "2026-09-10T12:00:00Z",
   updated_at: "2026-09-10T12:00:00Z",
   category: { id: "cat-1", name: "Alimentos" },
+  interest_count: 0,
+  answered_count: 0,
 };
 
 type MutateOptions = { onSuccess?: () => void; onError?: (error: unknown) => void };
@@ -49,10 +51,10 @@ function mockMutations({
   return { updateMutate, deleteMutate };
 }
 
-function renderItem() {
+function renderItem(overrides: Partial<NeedWithInterestCount> = {}) {
   return render(
     <MemoryRouter>
-      <OngNeedItem need={need} />
+      <OngNeedItem need={{ ...need, ...overrides }} />
     </MemoryRouter>,
   );
 }
@@ -166,5 +168,44 @@ describe("OngNeedItem", () => {
 
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(deleteMutate).not.toHaveBeenCalled();
+  });
+
+  it("separa os interesses sem resposta dos respondidos", () => {
+    mockMutations();
+    renderItem({ interest_count: 3, answered_count: 1 });
+
+    // uma cópia por layout (celular e desktop); o CSS mostra só uma
+    const groups = screen.getAllByRole("group", { name: "Interesses recebidos" });
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toHaveClass("md:hidden");
+    expect(groups[1]).toHaveClass("hidden", "md:flex");
+
+    const [mobile] = groups;
+    expect(
+      within(mobile).getByRole("link", { name: "2 sem resposta" }),
+    ).toHaveAttribute("href", "/necessidades/need-1");
+    expect(
+      within(mobile).getByRole("link", { name: "1 respondido" }),
+    ).toHaveAttribute("href", "/necessidades/need-1");
+  });
+
+  it("com tudo respondido, mostra só os respondidos", () => {
+    mockMutations();
+    renderItem({ interest_count: 2, answered_count: 2 });
+
+    const [mobile] = screen.getAllByRole("group", {
+      name: "Interesses recebidos",
+    });
+    expect(within(mobile).getByText("2 respondidos")).toBeInTheDocument();
+    expect(within(mobile).queryByText(/sem resposta/)).not.toBeInTheDocument();
+  });
+
+  it("não mostra tags sem interesses", () => {
+    mockMutations();
+    renderItem();
+
+    expect(
+      screen.queryByRole("group", { name: "Interesses recebidos" }),
+    ).not.toBeInTheDocument();
   });
 });

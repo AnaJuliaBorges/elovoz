@@ -10,7 +10,7 @@ import {
   Input,
   Textarea,
 } from "@/components/ui";
-import { todayIso } from "@/lib/dates";
+import { formatDateBr } from "@/lib/masks";
 import {
   emptyInterestForm,
   interestSchema,
@@ -32,6 +32,7 @@ export function InterestForm({
     control,
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<InterestFormInput>({
     resolver: zodResolver(interestSchema),
@@ -78,11 +79,18 @@ export function InterestForm({
             <FieldLabel htmlFor="expected_deadline">
               Até quando (opcional)
             </FieldLabel>
+            {/* texto com máscara, e não `type="date"`: o seletor nativo segue
+                o idioma do navegador e, em inglês, mostra mm/dd/aaaa */}
             <Input
               id="expected_deadline"
-              type="date"
-              min={todayIso()}
-              {...register("expected_deadline")}
+              inputMode="numeric"
+              placeholder="dd/mm/aaaa"
+              maxLength={10}
+              {...register("expected_deadline", {
+                onChange: (event) => {
+                  setValue("expected_deadline", formatDateBr(event.target.value));
+                },
+              })}
             />
             {errors.expected_deadline && (
               <FieldError errors={[errors.expected_deadline]} />

@@ -1,5 +1,10 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { fetchNeed, fetchOngNeeds, searchNeeds } from "../services/needs";
+import {
+  fetchNeed,
+  fetchOngDashboardNeeds,
+  fetchOngNeeds,
+  searchNeeds,
+} from "../services/needs";
 import type { NeedFilters, NeedsPage } from "../model/need";
 import { needKeys } from "./queryKeys";
 
@@ -26,6 +31,15 @@ export function useNeed(id: string) {
     queryKey: needKeys.detail(id),
     queryFn: () => fetchNeed(id),
     enabled: !!id,
+  });
+}
+
+/** O painel da ONG: as necessidades com a contagem de interesses. */
+export function useOngDashboardNeeds(ongId: string | undefined) {
+  return useQuery({
+    queryKey: needKeys.dashboard(ongId ?? ""),
+    queryFn: () => fetchOngDashboardNeeds(ongId!),
+    enabled: !!ongId,
   });
 }
 

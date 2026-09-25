@@ -48,6 +48,12 @@ export interface NeedWithCategory extends Need {
   category: { id: string; name: string } | null;
 }
 
+/** Necessidade no painel da ONG: quantos interesses recebeu e respondeu. */
+export interface NeedWithInterestCount extends NeedWithCategory {
+  interest_count: number;
+  answered_count: number;
+}
+
 /** Necessidade como as telas de busca e detalhe mostram: com a ONG junto. */
 export interface NeedWithOng extends NeedWithCategory {
   ong: {

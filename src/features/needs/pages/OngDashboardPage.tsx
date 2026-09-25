@@ -3,7 +3,7 @@ import { ClipboardList, Plus } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui";
 import { useMyOng } from "@/features/ongs";
 import { OngNeedItem } from "../components/OngNeedItem";
-import { useOngNeeds } from "../hooks/useNeedQueries";
+import { useOngDashboardNeeds } from "../hooks/useNeedQueries";
 
 const NEW_NEED_PATH = "/painel/necessidades/nova";
 
@@ -18,7 +18,8 @@ function ListSkeleton() {
 }
 
 function OngNeedsList({ ongId }: { ongId: string }) {
-  const { data: needs, isLoading, isError, refetch } = useOngNeeds(ongId);
+  const { data: needs, isLoading, isError, refetch } =
+    useOngDashboardNeeds(ongId);
 
   if (isLoading) return <ListSkeleton />;
 

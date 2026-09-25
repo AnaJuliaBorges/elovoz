@@ -1,10 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 import { useNeedInterests } from "../hooks/useInterests";
+import { useSetInterestAnswered } from "../hooks/useInterestMutations";
 import type { Interest } from "../model/interest";
 import { NeedInterestsList } from "./NeedInterestsList";
 
 vi.mock("../hooks/useInterests");
+vi.mock("../hooks/useInterestMutations");
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
+
+type MutateOptions = { onError?: (error: unknown) => void };
 
 const interest: Interest = {
   id: "interest-1",
@@ -18,6 +24,7 @@ const interest: Interest = {
   contact_name: null,
   contact_email: null,
   contact_phone: null,
+  answered_at: null,
 };
 
 function setup(overrides: Record<string, unknown> = {}) {
@@ -30,9 +37,16 @@ function setup(overrides: Record<string, unknown> = {}) {
   };
 
   vi.mocked(useNeedInterests).mockReturnValue(result as never);
+
+  const mutate = vi.fn();
+  vi.mocked(useSetInterestAnswered).mockReturnValue({
+    mutate,
+    isPending: false,
+  } as never);
+
   render(<NeedInterestsList needId="need-1" />);
 
-  return result;
+  return { ...result, mutate };
 }
 
 beforeEach(() => {
@@ -44,7 +58,7 @@ describe("NeedInterestsList", () => {
     setup();
 
     expect(
-      screen.getByRole("heading", { name: "1 pessoa quer doar" }),
+      screen.getByRole("heading", { name: /^1 pessoa quer doar/ }),
     ).toBeInTheDocument();
     expect(screen.getByText(interest.message!)).toBeInTheDocument();
     expect(screen.getByText("Quantidade: 10")).toBeInTheDocument();
@@ -56,7 +70,7 @@ describe("NeedInterestsList", () => {
     setup({ data: [interest, { ...interest, id: "interest-2" }] });
 
     expect(
-      screen.getByRole("heading", { name: "2 pessoas querem doar" }),
+      screen.getByRole("heading", { name: /^2 pessoas querem doar/ }),
     ).toBeInTheDocument();
   });
 
@@ -136,5 +150,80 @@ describe("NeedInterestsList", () => {
     await user.click(screen.getByRole("button", { name: "Tentar de novo" }));
 
     expect(result.refetch).toHaveBeenCalled();
+  });
+
+  it("marca como respondido pela caixa do rodapé", async () => {
+    const { mutate } = setup();
+    const user = userEvent.setup();
+
+    const answered = screen.getByRole("checkbox", {
+      name: "Marcar como respondido",
+    });
+    expect(answered).not.toBeChecked();
+    expect(answered).toHaveAccessibleDescription(
+      "Toque quando já tiver falado com a pessoa",
+    );
+
+    await user.click(answered);
+
+    expect(mutate).toHaveBeenCalledWith(
+      { id: "interest-1", answered: true },
+      expect.anything(),
+    );
+
+    const [, options] = mutate.mock.calls[0] as [unknown, MutateOptions];
+    options.onError?.(new Error("42501"));
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it("deixa o respondido esmaecido e desmarcável", async () => {
+    const { mutate } = setup({
+      data: [{ ...interest, answered_at: "2026-09-24T12:00:00Z" }],
+    });
+    const user = userEvent.setup();
+
+    const answered = screen.getByRole("checkbox", { name: "Respondido" });
+    expect(answered).toBeChecked();
+    expect(answered).toHaveAccessibleDescription("Toque para desmarcar");
+    // só o conteúdo esmaece; a caixa continua nítida
+    expect(screen.getByText(interest.message!).parentElement).toHaveClass(
+      "opacity-60",
+    );
+    expect(answered.closest("label")?.parentElement).not.toHaveClass(
+      "opacity-60",
+    );
+
+    await user.click(answered);
+
+    expect(mutate).toHaveBeenCalledWith(
+      { id: "interest-1", answered: false },
+      expect.anything(),
+    );
+  });
+
+  it("conta os sem resposta no título e mostra eles primeiro", () => {
+    setup({
+      data: [
+        {
+          ...interest,
+          id: "respondido",
+          message: "Já combinamos",
+          answered_at: "2026-09-24T12:00:00Z",
+        },
+        { ...interest, id: "pendente", message: "Ainda sem resposta" },
+      ],
+    });
+
+    expect(
+      screen.getByRole("heading", { name: /2 pessoas querem doar\s+·\s+1 sem resposta/ }),
+    ).toBeInTheDocument();
+
+    // o pendente vem antes do respondido na página
+    const pending = screen.getByText("Ainda sem resposta");
+    const answered = screen.getByText("Já combinamos");
+    expect(
+      pending.compareDocumentPosition(answered) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });

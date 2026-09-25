@@ -1,10 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import { errorCode } from "@/lib/postgrest";
+import { parseBrDate } from "@/lib/dates";
 import type { Interest, MyInterest } from "../model/interest";
 import type { InterestFormInput } from "../model/schema";
 
 const INTEREST_COLUMNS =
-  "id, need_id, donor_id, message, expected_quantity, expected_deadline, created_at, share_contact, contact_name, contact_email, contact_phone";
+  "id, need_id, donor_id, message, expected_quantity, expected_deadline, created_at, share_contact, contact_name, contact_email, contact_phone, answered_at";
 
 async function currentUserId(): Promise<string | null> {
   const {
@@ -105,9 +106,26 @@ export async function createInterest(
     expected_quantity: values.expected_quantity
       ? Number(values.expected_quantity)
       : null,
-    expected_deadline: values.expected_deadline || null,
+    expected_deadline: parseBrDate(values.expected_deadline),
     // só o "sim ou não": o contato é preenchido pelo trigger no banco
     share_contact: values.share_contact,
+  });
+
+  if (error) throw error;
+}
+
+/**
+ * A ONG marca (ou desmarca) o interesse como respondido. É RPC porque a ONG
+ * não tem UPDATE em `interests`: a função confere se o interesse é de uma
+ * necessidade dela e só mexe em `answered_at`.
+ */
+export async function setInterestAnswered(
+  id: string,
+  answered: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc("set_interest_answered", {
+    p_interest_id: id,
+    p_answered: answered,
   });
 
   if (error) throw error;

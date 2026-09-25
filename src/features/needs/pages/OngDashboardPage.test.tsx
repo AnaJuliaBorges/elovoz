@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { useMyOng } from "@/features/ongs";
-import { useOngNeeds } from "../hooks/useNeedQueries";
+import { useOngDashboardNeeds } from "../hooks/useNeedQueries";
 import OngDashboardPage from "./OngDashboardPage";
 
 vi.mock("@/features/ongs");
@@ -37,7 +37,7 @@ function mockNeeds(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 
-  vi.mocked(useOngNeeds).mockReturnValue(result as never);
+  vi.mocked(useOngDashboardNeeds).mockReturnValue(result as never);
   return result;
 }
 
@@ -59,7 +59,7 @@ describe("OngDashboardPage", () => {
     mockNeeds({ data: [{ id: "need-1", title: "Cestas básicas" }] });
     renderPage();
 
-    expect(useOngNeeds).toHaveBeenCalledWith("ong-1");
+    expect(useOngDashboardNeeds).toHaveBeenCalledWith("ong-1");
     expect(screen.getByText("Casa Solidária")).toBeInTheDocument();
     expect(screen.getByText("Cestas básicas")).toBeInTheDocument();
     expect(

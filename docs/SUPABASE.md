@@ -4,9 +4,7 @@ O schema e as policies já estão aplicados no projeto. O SQL correspondente est
 em `supabase/migrations/` (histórico do que rodou) e o que ainda precisa ser
 rodado à mão fica em `supabase/sql/`.
 
-> **Pendente agora:** `interest_contact.sql` cria as colunas de contato
-> compartilhado em `interests` e o trigger que as preenche — sem ele, enviar
-> interesse falha, porque o app já manda `share_contact`.
+> **Pendente agora:** nada.
 > `seed_usuarios_teste.sql` cria contas de
 > teste (doadora, ONG aprovada, ONG pendente e admin, senha `elovoz123`); é
 > re-executável e pode ficar na pasta enquanto for útil.
@@ -35,7 +33,7 @@ etc.) em português, porque aparece para o usuário.
 | `ong_opening_hours` | `ong_id`, `weekday` (0-6, 0 = domingo), `opens_at`, `closes_at` | uma faixa por dia; único por (`ong_id`, `weekday`), com check de `closes_at > opens_at` |
 | `categories` | `id`, `name`, `icon` | seed com 10 categorias + "Outros" |
 | `needs` | `ong_id`, `category_id`, `title`, `description`, `quantity`, `urgency`, `deadline`, `status`, `created_at`, `updated_at` | `updated_at` mantido por trigger |
-| `interests` | `need_id`, `donor_id`, `message`, `expected_quantity`, `expected_deadline`, `share_contact`, `contact_name`, `contact_email`, `contact_phone` | RF06; o contato só é preenchido (pelo trigger) quando o doador autoriza |
+| `interests` | `need_id`, `donor_id`, `message`, `expected_quantity`, `expected_deadline`, `share_contact`, `contact_name`, `contact_email`, `contact_phone`, `answered_at` | RF06; o contato só é preenchido (pelo trigger) quando o doador autoriza; `answered_at` só muda por `set_interest_answered` |
 | `ong_followers` | `donor_id`, `ong_id` | único por par; alimenta o RF09 |
 | `notifications` | `donor_id`, `need_id`, `read` | **sem INSERT pelo client** — só server-side |
 
@@ -64,7 +62,9 @@ etc.) em português, porque aparece para o usuário.
 | `notify_followers_on_new_need()` | trigger AFTER INSERT em `needs`: um aviso em `notifications` para cada seguidor da ONG | RF09 |
 | `admin_list_users()` | todas as contas, de `auth.users` com `profiles` e a ONG: e-mail, último acesso e cadastros incompletos; vazio para quem não é admin | `/admin/usuarios` (`admin/services/users.ts`) |
 | `admin_delete_user(p_user_id)` | apaga a conta de outra pessoa em `auth.users` (o cascade leva o resto); só admin, e recusa a si mesmo e outros admins | `/admin/usuarios` |
-| `fill_interest_contact()` | trigger BEFORE INSERT/UPDATE em `interests`: com `share_contact`, copia nome, telefone (`profiles`) e e-mail (`auth.users`) do doador; sem, zera os três | RF06 |
+| `set_interest_answered(p_interest_id, p_answered)` | a ONG dona da necessidade marca/desmarca o interesse como respondido (`answered_at`); recusa quem não é dona | detalhe da necessidade (`donations/services/interests.ts`) |
+| `guard_interest_answered()` | trigger BEFORE UPDATE em `interests`: recusa mudança de `answered_at` fora de `set_interest_answered` (a ONG não tem UPDATE na tabela, e o doador tem) | — |
+| `fill_interest_contact()` | trigger BEFORE INSERT/UPDATE OF `share_contact` em `interests`: com `share_contact`, copia nome, telefone (`profiles`) e e-mail (`auth.users`) do doador; sem, zera os três | RF06 |
 | `delete_own_account()` | apaga o próprio usuário de `auth.users` (o cascade leva o resto); recusa admin | `/perfil` (`profile/services/account.ts`) |
 
 A função `current_user_type()` é `SECURITY DEFINER` justamente para consultar

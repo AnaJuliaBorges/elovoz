@@ -1,5 +1,6 @@
 import {
   formatCnpj,
+  formatDateBr,
   formatPhone,
   isValidCnpj,
   isValidPhone,
@@ -60,5 +61,19 @@ describe("isValidPhone", () => {
 
   it("recusa números curtos demais", () => {
     expect(isValidPhone("99876543")).toBe(false);
+  });
+});
+
+describe("formatDateBr", () => {
+  it("põe as barras enquanto a pessoa digita", () => {
+    expect(formatDateBr("2")).toBe("2");
+    expect(formatDateBr("201")).toBe("20/1");
+    expect(formatDateBr("20122")).toBe("20/12/2");
+    expect(formatDateBr("20122026")).toBe("20/12/2026");
+  });
+
+  it("ignora o que não é número e corta no oitavo dígito", () => {
+    expect(formatDateBr("20/12/2026999")).toBe("20/12/2026");
+    expect(formatDateBr("ab20c12")).toBe("20/12");
   });
 });

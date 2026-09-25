@@ -19,6 +19,7 @@ const interest: MyInterest = {
   contact_name: null,
   contact_email: null,
   contact_phone: null,
+  answered_at: null,
   need: {
     id: "need-1",
     title: "Cestas básicas",

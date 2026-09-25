@@ -27,6 +27,7 @@ const interest: Interest = {
   contact_name: null,
   contact_email: null,
   contact_phone: null,
+  answered_at: null,
 };
 
 function setup({
@@ -126,6 +127,23 @@ describe("DonorInterestSection", () => {
       expected_deadline: "",
       share_contact: false,
     });
+  });
+
+  it("aceita a data digitada no formato brasileiro, com a máscara", async () => {
+    const { create } = setup();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: /Tenho interesse/ }));
+
+    const deadline = screen.getByLabelText("Até quando (opcional)");
+    await user.type(deadline, "20122099");
+    expect(deadline).toHaveValue("20/12/2099");
+
+    await user.click(screen.getByRole("button", { name: "Enviar interesse" }));
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ expected_deadline: "20/12/2099" }),
+    );
   });
 
   it("compartilha o contato só quando o doador marca", async () => {

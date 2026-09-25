@@ -7,11 +7,13 @@ import {
   fetchMyInterests,
   fetchNeedInterests,
   interestErrorMessage,
+  setInterestAnswered,
 } from "./interests";
 
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     from: vi.fn(),
+    rpc: vi.fn(),
     auth: { getSession: vi.fn() },
   },
 }));
@@ -29,10 +31,11 @@ const interest = {
   created_at: "2026-09-20T12:00:00Z",
 };
 
+// a data chega do formulário como DD/MM/AAAA e sai para o banco como AAAA-MM-DD
 const values = {
   message: "Tenho 10 cestas, falo pelo (21) 99999-1234",
   expected_quantity: "10",
-  expected_deadline: "2026-12-20",
+  expected_deadline: "20/12/2026",
   share_contact: true,
 };
 
@@ -244,5 +247,29 @@ describe("interestErrorMessage", () => {
 
   it("usa o fallback nos outros casos", () => {
     expect(interestErrorMessage(new Error("rede"), "falhou")).toBe("falhou");
+  });
+});
+
+describe("setInterestAnswered", () => {
+  it("marca pela função do banco", async () => {
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as never);
+
+    await setInterestAnswered("interest-1", true);
+
+    expect(supabase.rpc).toHaveBeenCalledWith("set_interest_answered", {
+      p_interest_id: "interest-1",
+      p_answered: true,
+    });
+  });
+
+  it("propaga a recusa da função", async () => {
+    vi.mocked(supabase.rpc).mockResolvedValue({
+      data: null,
+      error: { code: "42501" },
+    } as never);
+
+    await expect(setInterestAnswered("interest-1", false)).rejects.toEqual({
+      code: "42501",
+    });
   });
 });

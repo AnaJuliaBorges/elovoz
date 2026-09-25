@@ -121,7 +121,8 @@ Cadastro, busca e status das necessidades (RF03, RF04, RF07).
 | `pages/CreateNeedPage.tsx`, `pages/EditNeedPage.tsx` | carregam os dados e só então montam o `NeedForm` (sem `reset()` tardio). Depois de salvar, a edição volta para onde a pessoa veio (`state.from`, aceito só se for caminho interno), e não sempre para o painel |
 | `components/NeedForm.tsx` | form de criar/editar |
 | `components/NeedFiltersBar.tsx` | categoria, urgência, estado/cidade e bairro (com debounce) |
-| `components/OngNeedItem.tsx` | linha do painel: select de status, editar, excluir com confirmação |
+| `components/OngNeedItem.tsx` | linha do painel: select de status, editar, excluir com confirmação e as tags "N sem resposta" e "N respondidos" (embaixo do título no celular, ao lado do status no desktop) |
+| `services/needs.ts` → `fetchOngDashboardNeeds` | as necessidades do painel com `interests(answered_at)`, contadas em recebidos e respondidos; consulta à parte porque o perfil público (`fetchOngNeeds`) não precisa da contagem |
 | `components/NeedCard.tsx`, `components/NeedBadges.tsx` | card da busca (a ONG só aparece quando vem no embed — no perfil dela seria repetição); badges de urgência e de status |
 | `model/need.ts` | tipos, rótulos em português, `formatOngLocation`, `isOpenForDonation` |
 | `model/schema.ts` | `needSchema`, `emptyNeedForm`, `needToForm` |
@@ -216,7 +217,7 @@ quem recebe, no detalhe da necessidade, mais o histórico do doador em
 | `components/DonorInterestSection.tsx` | o que o doador vê: botão "Tenho interesse", formulário e, depois, o que ele enviou (com cancelar) |
 | `components/InterestForm.tsx` | mensagem, quantidade e prazo previstos, todos opcionais (quem só vai levar a doação envia sem escrever nada), e a caixa "Compartilhar meu nome, e-mail e telefone", desmarcada por padrão |
 | `components/DonorContact.tsx` | o contato que o doador autorizou, para a ONG: e-mail, telefone e WhatsApp (o link vem de `src/lib/contactLinks.ts`) |
-| `components/NeedInterestsList.tsx` | o que a ONG dona vê: quem quer doar naquela necessidade |
+| `components/NeedInterestsList.tsx` | o que a ONG dona vê: quem quer doar naquela necessidade, os sem resposta primeiro, com a caixa "Respondido" no rodapé de cada card; respondido fica esmaecido (RPC `set_interest_answered`) |
 | `pages/MyDonationsPage.tsx` | `/minhas-doacoes`: abas "Interesses" e "Instituições que sigo" (a segunda é o `FollowedOngsList` da feature `ongs`) |
 | `components/MyInterestsList.tsx` | histórico dos interesses, com a necessidade, o status dela e a ONG |
 | `model/interest.ts`, `model/schema.ts` | tipos `Interest` e `MyInterest` (com o embed da necessidade) e `interestSchema` |

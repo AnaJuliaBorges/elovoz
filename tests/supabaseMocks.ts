@@ -249,6 +249,7 @@ export type InterestRow = {
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  answered_at: string | null;
 };
 
 export function interestRow(
@@ -266,6 +267,7 @@ export function interestRow(
     contact_name: null,
     contact_email: null,
     contact_phone: null,
+    answered_at: null,
     ...overrides,
   };
 }

@@ -1,9 +1,17 @@
 import { renderHook } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
-import { createInterest, deleteInterest } from "../services/interests";
+import {
+  createInterest,
+  deleteInterest,
+  setInterestAnswered,
+} from "../services/interests";
 import { emptyInterestForm } from "../model/schema";
-import { useCreateInterest, useDeleteInterest } from "./useInterestMutations";
+import {
+  useCreateInterest,
+  useDeleteInterest,
+  useSetInterestAnswered,
+} from "./useInterestMutations";
 
 vi.mock("../services/interests");
 
@@ -58,5 +66,20 @@ describe("useDeleteInterest", () => {
 
     expect(deleteInterest).toHaveBeenCalledWith("interest-1");
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["interests"] });
+  });
+});
+
+describe("useSetInterestAnswered", () => {
+  it("marca e invalida os interesses e as necessidades do painel", async () => {
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    const { result } = renderHook(() => useSetInterestAnswered(), {
+      wrapper,
+    });
+
+    await result.current.mutateAsync({ id: "interest-1", answered: true });
+
+    expect(setInterestAnswered).toHaveBeenCalledWith("interest-1", true);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["interests"] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["needs"] });
   });
 });

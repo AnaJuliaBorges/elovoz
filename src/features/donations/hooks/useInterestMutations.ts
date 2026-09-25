@@ -1,5 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createInterest, deleteInterest } from "../services/interests";
+import {
+  createInterest,
+  deleteInterest,
+  setInterestAnswered,
+} from "../services/interests";
 import type { InterestFormInput } from "../model/schema";
 import { interestKeys } from "./queryKeys";
 
@@ -25,5 +29,24 @@ export function useDeleteInterest() {
     mutationFn: (id: string) => deleteInterest(id),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: interestKeys.all }),
+  });
+}
+
+/**
+ * Além dos interesses, invalida `["needs"]`: o painel da ONG conta quantos
+ * foram respondidos em cada necessidade.
+ */
+export function useSetInterestAnswered() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ["interests", "answered"],
+    mutationFn: ({ id, answered }: { id: string; answered: boolean }) =>
+      setInterestAnswered(id, answered),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: interestKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["needs"] }),
+      ]),
   });
 }

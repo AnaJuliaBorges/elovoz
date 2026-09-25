@@ -5,6 +5,7 @@ import type {
   NeedFilters,
   NeedStatus,
   NeedWithCategory,
+  NeedWithInterestCount,
   NeedWithOng,
   NeedsPage,
 } from "../model/need";
@@ -100,6 +101,36 @@ export async function fetchNeed(id: string): Promise<NeedWithOng | null> {
   if (error) throw error;
 
   return (data as unknown as NeedWithOng | null) ?? null;
+}
+
+/**
+ * Necessidades da própria ONG com quantos interesses recebeu e quantos já
+ * respondeu, para o painel. Traz só o `answered_at` de cada interesse e conta
+ * aqui; a RLS deixa a ONG dona ver todos os interesses das necessidades dela.
+ * Fica numa consulta à parte porque o perfil público (`fetchOngNeeds`) não
+ * precisa da contagem.
+ */
+export async function fetchOngDashboardNeeds(
+  ongId: string,
+): Promise<NeedWithInterestCount[]> {
+  const { data, error } = await supabase
+    .from("needs")
+    .select(`${NEED_WITH_CATEGORY_COLUMNS}, interests(answered_at)`)
+    .eq("ong_id", ongId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as unknown as (NeedWithCategory & {
+    interests?: { answered_at: string | null }[];
+  })[];
+
+  return rows.map(({ interests = [], ...need }) => ({
+    ...need,
+    interest_count: interests.length,
+    answered_count: interests.filter((interest) => interest.answered_at)
+      .length,
+  }));
 }
 
 export async function fetchOngNeeds(ongId: string): Promise<NeedWithCategory[]> {

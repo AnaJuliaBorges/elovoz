@@ -38,10 +38,26 @@ describe("interestSchema", () => {
   it("recusa data no passado", () => {
     const result = interestSchema.safeParse({
       ...base,
-      expected_deadline: "2020-01-01",
+      expected_deadline: "01/01/2020",
     });
 
     expect(result.success).toBe(false);
     expect(result.error?.issues[0].message).toMatch(/passado/);
+  });
+
+  it("recusa data que não existe ou fora do formato", () => {
+    for (const expected_deadline of ["31/02/2030", "20/12", "2030-12-20"]) {
+      const result = interestSchema.safeParse({ ...base, expected_deadline });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0].message).toMatch(/dd\/mm\/aaaa/);
+    }
+  });
+
+  it("aceita data futura no formato brasileiro", () => {
+    expect(
+      interestSchema.safeParse({ ...base, expected_deadline: "20/12/2099" })
+        .success,
+    ).toBe(true);
   });
 });

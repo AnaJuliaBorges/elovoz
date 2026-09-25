@@ -60,3 +60,12 @@ export function isValidPhone(value: string): boolean {
 
   return digits.length === 10 || digits.length === 11;
 }
+
+/** Máscara de data brasileira enquanto a pessoa digita: "20122026" → "20/12/2026". */
+export function formatDateBr(value: string): string {
+  const digits = onlyDigits(value).slice(0, 8);
+
+  return digits
+    .replace(/^(\d{2})(\d)/, "$1/$2")
+    .replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3");
+}

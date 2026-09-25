@@ -18,6 +18,8 @@ export interface Interest {
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  /** Quando a ONG marcou como respondido; `null` é ainda sem resposta. */
+  answered_at: string | null;
 }
 
 /**
