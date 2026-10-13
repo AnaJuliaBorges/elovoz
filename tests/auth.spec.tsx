@@ -71,6 +71,22 @@ test.describe("Autenticação no Elovoz", () => {
     expect(state.profile).toMatchObject({ user_type: "donor", name: "Ana E2E" });
   });
 
+  test("Cadastrar ONG da home abre o cadastro com ONG marcada", async ({
+    page,
+  }) => {
+    await setupSupabaseMocks(page);
+
+    await page.goto("/");
+    await page.getByRole("link", { name: "Cadastrar ONG" }).click();
+
+    await expect(page).toHaveURL(/\/cadastrar\?tipo=ong/);
+    await expect(page.getByRole("radio", { name: /Sou uma ONG/ })).toBeChecked();
+    await expect(page.getByText("Passo 1 de 4")).toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: "Nome do responsável" }),
+    ).toBeVisible();
+  });
+
   test("cadastra ONG em quatro passos e mostra o cadastro em análise", async ({
     page,
   }) => {

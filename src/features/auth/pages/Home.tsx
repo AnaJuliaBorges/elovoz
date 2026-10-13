@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { HandHeart, MapPin, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui";
 import { PRIVACY_POLICY_PATH } from "@/features/legal";
+import { ONG_SIGNUP_PATH } from "../model/redirect";
 import logo from "@/assets/logo.png";
 
 const HIGHLIGHTS = [
@@ -85,7 +86,7 @@ export default function Home() {
         </p>
 
         <Button asChild variant="outline" className="mt-4 bg-surface">
-          <Link to="/cadastrar">Cadastrar ONG</Link>
+          <Link to={ONG_SIGNUP_PATH}>Cadastrar ONG</Link>
         </Button>
       </section>
 

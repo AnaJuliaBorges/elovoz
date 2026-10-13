@@ -13,7 +13,12 @@ import { OngDataStep } from "../signUp/steps/OngDataStep";
 import { OngContactStep } from "../signUp/steps/OngContactStep";
 import { OngHoursStep } from "../signUp/steps/OngHoursStep";
 import { PendingReview } from "../signUp/steps/PendingReview";
-import { REDIRECT_PARAM, safeRedirect, withRedirect } from "../model/redirect";
+import {
+  REDIRECT_PARAM,
+  SIGNUP_TYPE_PARAM,
+  safeRedirect,
+  withRedirect,
+} from "../model/redirect";
 import icone from "@/assets/icone.png";
 
 const ONG_STEP_TITLES = [
@@ -38,8 +43,6 @@ export default function SignUpPage() {
   } = useSignUpWizard(returnTo);
   const update = useSignUpWizardStore((state) => state.update);
 
-  const isOng = data.account.user_type === "ong";
-
   // a senha não é persistida (de propósito): se a página foi recarregada no
   // meio do wizard, não dá pra criar a conta no fim — voltamos ao passo 1
   const passwordLost =
@@ -50,6 +53,13 @@ export default function SignUpPage() {
   }, [passwordLost, update]);
 
   const step = passwordLost ? 1 : data.step;
+
+  // "Cadastrar ONG" da home chega com ?tipo=ong: o passo 1 já abre com ONG marcada
+  const account =
+    step === 1 && searchParams.get(SIGNUP_TYPE_PARAM) === "ong"
+      ? { ...data.account, user_type: "ong" as const }
+      : data.account;
+  const isOng = account.user_type === "ong";
 
   if (step === 5) {
     return <PendingReview tradeName={data.ongData?.trade_name ?? "sua ONG"} />;
@@ -82,7 +92,7 @@ export default function SignUpPage() {
 
       {step === 1 && (
         <AccountStep
-          defaultValues={data.account}
+          defaultValues={account}
           onSubmit={submitAccount}
           submitting={submitting}
           error={error}

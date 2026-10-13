@@ -4,6 +4,10 @@
  */
 export const REDIRECT_PARAM = "voltar";
 
+/** `/cadastrar?tipo=ong` abre o cadastro com "Sou uma ONG" já marcado. */
+export const SIGNUP_TYPE_PARAM = "tipo";
+export const ONG_SIGNUP_PATH = `/cadastrar?${SIGNUP_TYPE_PARAM}=ong`;
+
 /** "/login" + "/necessidades/1" → "/login?voltar=%2Fnecessidades%2F1" */
 export function withRedirect(path: string, returnTo: string): string {
   return `${path}?${new URLSearchParams({ [REDIRECT_PARAM]: returnTo })}`;
